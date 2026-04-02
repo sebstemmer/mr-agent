@@ -14,12 +14,17 @@ from langgraph.checkpoint.memory import MemorySaver
 from datetime import date
 
 from config import settings
+from container import Container
 from tools.weather import get_weather
+
+container = Container()
 
 telegram_app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
+tools = [get_weather, container.jobs_tool()]
+
 llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
-llm_with_tools = llm.bind_tools([get_weather])
+llm_with_tools = llm.bind_tools(tools)
 
 memory = MemorySaver()
 
@@ -47,7 +52,12 @@ async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def log_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     result = await agent.ainvoke({"messages": [HumanMessage(content=update.message.text)]},
                                  config={"configurable": {"thread_id": str(update.effective_user.id)}})
-    await update.message.reply_text(result["messages"][-1].content)
+    content = result["messages"][-1].content
+    postings = content.split("#########")
+    for posting in postings:
+        posting = posting.strip()
+        if posting:
+            await update.message.reply_text(posting)
 
 
 class AgentState(TypedDict):
@@ -63,12 +73,13 @@ def should_continue(state: AgentState):
 
 async def llm_node(state: AgentState):
     print(state["messages"])
-    system = SystemMessage(content=f"You are a helpful assistant. Please reply in one sentence. Today's date is {date.today()}.")
+    system = SystemMessage(
+        content=f"You are a helpful assistant. Today's date is {date.today()}.")
     response = await llm_with_tools.ainvoke([system] + state["messages"])
     return {"messages": [response]}
 
 
-tool_node = ToolNode([get_weather])
+tool_node = ToolNode(tools)
 
 graph = StateGraph(AgentState)
 graph.add_node("llm", llm_node)
