@@ -3,10 +3,25 @@ from contextlib import asynccontextmanager
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 from fastapi import FastAPI
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
+from langgraph.prebuilt import ToolNode
+from typing import Annotated
+from langgraph.graph import add_messages
+from langgraph.checkpoint.memory import MemorySaver
+from datetime import date
 
 from config import settings
+from tools.weather import get_weather
 
 telegram_app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).build()
+
+llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
+llm_with_tools = llm.bind_tools([get_weather])
+
+memory = MemorySaver()
 
 
 @asynccontextmanager
@@ -30,9 +45,38 @@ async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def log_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print(update.message.text)
-    await update.message.reply_text(f"you wrote me {update.message.text}")
+    result = await agent.ainvoke({"messages": [HumanMessage(content=update.message.text)]},
+                                 config={"configurable": {"thread_id": str(update.effective_user.id)}})
+    await update.message.reply_text(result["messages"][-1].content)
 
+
+class AgentState(TypedDict):
+    messages: Annotated[list[BaseMessage], add_messages]
+
+
+def should_continue(state: AgentState):
+    last_message = state["messages"][-1]
+    if last_message.tool_calls:
+        return "tools"
+    return "end"
+
+
+async def llm_node(state: AgentState):
+    print(state["messages"])
+    system = SystemMessage(content=f"You are a helpful assistant. Please reply in one sentence. Today's date is {date.today()}.")
+    response = await llm_with_tools.ainvoke([system] + state["messages"])
+    return {"messages": [response]}
+
+
+tool_node = ToolNode([get_weather])
+
+graph = StateGraph(AgentState)
+graph.add_node("llm", llm_node)
+graph.add_node("tools", tool_node)
+graph.add_edge(START, "llm")
+graph.add_conditional_edges("llm", should_continue, {"tools": "tools", "end": END})
+graph.add_edge("tools", "llm")
+agent = graph.compile(checkpointer=memory)
 
 telegram_app.add_handler(CommandHandler("hello", hello))
 telegram_app.add_handler(MessageHandler(filters.TEXT, log_input))
