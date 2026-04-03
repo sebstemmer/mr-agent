@@ -6,4 +6,7 @@ __pycache__
 venv
 
 .env
-database.db
+.env.production
+ansible/github.pub
+ansible/inventory.yml
+*.db

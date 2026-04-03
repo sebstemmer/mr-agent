@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     JOB_CLASSIFICATION_PROMPT: str
     JOB_SEARCH_QUERY: str
     JOB_SEARCH_MAX_PAGES: int
+    DATABASE_URL: str
 
     class Config:
         env_file = ".env"
