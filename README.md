@@ -1,5 +1,11 @@
 # mr-agent
 
+## Update dependencies
+
+```bash
+./update_deps.sh
+```
+
 ## Deployment
 
 ### 1. Create SSH key for GitHub Actions
