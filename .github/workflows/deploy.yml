@@ -39,6 +39,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: deploy
           key: ${{ secrets.SSH_KEY }}
+          protocol: tcp6
           script: |
             cd /home/deploy/mr-agent
             docker compose pull
