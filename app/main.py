@@ -16,12 +16,13 @@ from datetime import date
 from config import settings
 from container import Container
 from tools.weather import get_weather
+from channels.src.split_message import split_message
 
 container = Container()
 
 telegram_app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
-tools = [get_weather, container.jobs_tool()]
+tools = [get_weather, container.jobs_tool(), container.job_search_status_tool()]
 
 llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
 llm_with_tools = llm.bind_tools(tools)
@@ -53,11 +54,8 @@ async def log_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     result = await agent.ainvoke({"messages": [HumanMessage(content=update.message.text)]},
                                  config={"configurable": {"thread_id": str(update.effective_user.id)}})
     content = result["messages"][-1].content
-    postings = content.split("#########")
-    for posting in postings:
-        posting = posting.strip()
-        if posting:
-            await update.message.reply_text(posting)
+    for message in split_message(content):
+        await update.message.reply_text(message)
 
 
 class AgentState(TypedDict):

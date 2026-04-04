@@ -12,6 +12,7 @@ h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
 idna==3.11
+iniconfig==2.3.0
 jiter==0.13.0
 jsonpatch==1.33
 jsonpointer==3.1.1
@@ -27,9 +28,12 @@ openai==2.30.0
 orjson==3.11.8
 ormsgpack==1.12.2
 packaging==26.0
+pluggy==1.6.0
 pydantic==2.12.5
 pydantic-settings==2.13.1
 pydantic_core==2.41.5
+Pygments==2.20.0
+pytest==9.0.2
 python-dotenv==1.2.2
 python-telegram-bot==22.7
 PyYAML==6.0.3

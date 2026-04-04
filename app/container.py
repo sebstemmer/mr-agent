@@ -5,6 +5,7 @@ from config import settings as config
 from repositories.job_repository import JobRepository
 from repositories.search_state_repository import SearchStateRepository
 from tools.jobs_tool import JobsTool
+from tools.job_search_status import JobSearchStatusTool
 
 
 def _create_engine(url: str):
@@ -21,5 +22,9 @@ class Container(containers.DeclarativeContainer):
     jobs_tool = providers.Singleton(
         JobsTool,
         job_repo=job_repo,
+        state_repo=state_repo,
+    )
+    job_search_status_tool = providers.Singleton(
+        JobSearchStatusTool,
         state_repo=state_repo,
     )
