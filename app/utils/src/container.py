@@ -1,0 +1,14 @@
+from dependency_injector import containers, providers
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from utils.src.config import settings as config
+from utils.src.database import create_engine
+from utils.src.http_client import create_http_client
+from utils.src.scheduler import create_scheduler
+
+
+class UtilsContainer(containers.DeclarativeContainer):
+    scheduler = providers.Singleton(create_scheduler)
+    http_client = providers.Singleton(create_http_client)
+    engine = providers.Singleton(create_engine, url=config.DATABASE_URL)
+    session = providers.Singleton(AsyncSession, bind=engine)

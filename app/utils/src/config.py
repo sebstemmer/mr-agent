@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     RAPIDAPI_KEY: str
     JOB_CLASSIFICATION_PROMPT: str
     JOB_SEARCH_QUERY: str
+    INIT_JOB_SEARCH_MAX_PAGES: int
     JOB_SEARCH_MAX_PAGES: int
     DATABASE_URL: str
 

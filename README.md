@@ -29,7 +29,7 @@ rm ansible/github
 
 ### 3. Create production environment file
 
-Set `DATABASE_URL=sqlite:///data/database.db`
+Set `DATABASE_URL=sqlite+aiosqlite:///data/database.db`
 
 ### 4. Create Ansible inventory
 

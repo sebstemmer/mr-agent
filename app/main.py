@@ -1,26 +1,20 @@
 from contextlib import asynccontextmanager
-
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
-from fastapi import FastAPI
-from typing import TypedDict
-from langgraph.graph import StateGraph, START, END
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
-from langgraph.prebuilt import ToolNode
-from typing import Annotated
-from langgraph.graph import add_messages
-from langgraph.checkpoint.memory import MemorySaver
 from datetime import date
+from typing import Annotated, TypedDict
 
-from config import settings
 from container import Container
+from dependency_injector import providers
+from fastapi import FastAPI
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, START, StateGraph, add_messages
+from langgraph.prebuilt import ToolNode
+from sqlmodel import SQLModel
 from tools.weather import get_weather
-from channels.src.split_message import split_message
+from utils.src.config import settings
 
 container = Container()
-
-telegram_app = ApplicationBuilder().token(settings.TELEGRAM_BOT_TOKEN).build()
 
 tools = [get_weather, container.jobs_tool(), container.job_search_status_tool()]
 
@@ -28,34 +22,6 @@ llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
 llm_with_tools = llm.bind_tools(tools)
 
 memory = MemorySaver()
-
-
-@asynccontextmanager
-async def lifespan(_app):
-    await telegram_app.initialize()
-    await telegram_app.start()
-    await telegram_app.updater.start_polling()  # type: ignore
-
-    yield
-
-    await telegram_app.updater.stop()  # type: ignore
-    await telegram_app.stop()
-    await telegram_app.shutdown()
-
-
-app = FastAPI(lifespan=lifespan)
-
-
-async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
-
-
-async def log_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    result = await agent.ainvoke({"messages": [HumanMessage(content=update.message.text)]},
-                                 config={"configurable": {"thread_id": str(update.effective_user.id)}})
-    content = result["messages"][-1].content
-    for message in split_message(content):
-        await update.message.reply_text(message)
 
 
 class AgentState(TypedDict):
@@ -72,7 +38,8 @@ def should_continue(state: AgentState):
 async def llm_node(state: AgentState):
     print(state["messages"])
     system = SystemMessage(
-        content=f"You are a helpful assistant. Today's date is {date.today()}.")
+        content=f"You are a helpful assistant. Today's date is {date.today()}."
+    )
     response = await llm_with_tools.ainvoke([system] + state["messages"])
     return {"messages": [response]}
 
@@ -87,5 +54,24 @@ graph.add_conditional_edges("llm", should_continue, {"tools": "tools", "end": EN
 graph.add_edge("tools", "llm")
 agent = graph.compile(checkpointer=memory)
 
-telegram_app.add_handler(CommandHandler("hello", hello))
-telegram_app.add_handler(MessageHandler(filters.TEXT, log_input))
+container.agent.override(providers.Object(agent))
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    async with container.utils().engine().begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+
+    scheduler = container.utils().scheduler()
+    scheduler.start()
+
+    telegram_bot = container.telegram().bot()
+    await telegram_bot.start()
+
+    yield
+
+    scheduler.shutdown()
+    await telegram_bot.stop()
+
+
+app = FastAPI(lifespan=lifespan)

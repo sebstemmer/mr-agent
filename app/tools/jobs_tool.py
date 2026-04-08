@@ -8,10 +8,10 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from pydantic import BaseModel
 import httpx
 
-from config import settings
-from models import Job
-from repositories.job_repository import JobRepository
-from repositories.search_state_repository import SearchStateRepository
+from utils.src.config import settings
+from job_search.src.search_state_model import Job
+from job_search.src.job_repository import JobRepository
+from job_search.src.job_search_state_repository import JobSearchStateRepository
 
 _classification_llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
 
@@ -93,7 +93,7 @@ class JobsTool(BaseTool):
     description: str = "Returns all interesting job postings. Automatically searches for new jobs if not searched today. Each result includes a summary and application link."
     args_schema: Type[BaseModel] = SearchJobsInput
     job_repo: JobRepository
-    state_repo: SearchStateRepository
+    state_repo: JobSearchStateRepository
 
     class Config:
         arbitrary_types_allowed = True
@@ -101,9 +101,9 @@ class JobsTool(BaseTool):
     async def _search_new_jobs(self) -> None:
         state = self.state_repo.get()
 
-        if not state.initialized_at:
+        if not state.last_searched_at:
             date_posted = "all"
-            num_pages = settings.JOB_SEARCH_MAX_PAGES
+            num_pages = settings.INIT_JOB_SEARCH_MAX_PAGES
         else:
             date_posted = "today"
             num_pages = 1
@@ -132,14 +132,12 @@ class JobsTool(BaseTool):
             )
             self.job_repo.save(job=db_job)
 
-        if not state.initialized_at:
-            self.state_repo.update_initialized_at(value=date.today())
-        self.state_repo.update_last_search(value=date.today())
+        self.state_repo.update_last_searched_at(value=date.today())
 
     async def _arun(self) -> str:
         state = self.state_repo.get()
 
-        if state.last_search != date.today():
+        if state.last_searched_at != date.today():
             await self._search_new_jobs()
 
         jobs = self.job_repo.find_all_interesting()

@@ -1,30 +1,45 @@
 from dependency_injector import containers, providers
-from sqlmodel import Session, create_engine, SQLModel
+from langgraph.graph.state import CompiledStateGraph
 
-from config import settings as config
-from repositories.job_repository import JobRepository
-from repositories.search_state_repository import SearchStateRepository
-from tools.jobs_tool import JobsTool
+from channels.common.src.container import ChannelsCommonContainer
+from channels.telegram.src.container import TelegramContainer
+from job_search.src.container import JobSearchContainer
 from tools.job_search_status import JobSearchStatusTool
-
-
-def _create_engine(url: str):
-    eng = create_engine(url)
-    SQLModel.metadata.create_all(eng)
-    return eng
+from tools.jobs_tool import JobsTool
+from utils.src.config import settings
+from utils.src.container import UtilsContainer
 
 
 class Container(containers.DeclarativeContainer):
-    engine = providers.Singleton(_create_engine, url=config.DATABASE_URL)
-    session = providers.Singleton(Session, bind=engine)
-    job_repo = providers.Singleton(JobRepository, session=session)
-    state_repo = providers.Singleton(SearchStateRepository, session=session)
+    utils = providers.Container(UtilsContainer)
+
+    job_search = providers.Container(
+        JobSearchContainer,
+        session=utils.container.session,
+        http_client=utils.container.http_client,
+    )
+
     jobs_tool = providers.Singleton(
         JobsTool,
-        job_repo=job_repo,
-        state_repo=state_repo,
+        job_repo=job_search.container.job_repo,
+        state_repo=job_search.container.state_repo,
     )
     job_search_status_tool = providers.Singleton(
         JobSearchStatusTool,
-        state_repo=state_repo,
+        state_repo=job_search.container.state_repo,
+    )
+
+    channels_common = providers.Container(
+        ChannelsCommonContainer,
+        session=utils.container.session,
+    )
+
+    agent = providers.Dependency(instance_of=CompiledStateGraph)
+
+    telegram = providers.Container(
+        TelegramContainer,
+        chat_repo=channels_common.container.chat_repo,
+        save_or_update_chat_id=channels_common.container.save_or_update_chat_id_to_channel_type,
+        agent=agent,
+        telegram_bot_token=providers.Object(settings.TELEGRAM_BOT_TOKEN),
     )

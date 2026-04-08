@@ -1,4 +1,4 @@
-from app.channels.src.split_message import split_message
+from app.channels.common.src.split_message import split_message
 
 
 def test_text_within_limit_returns_single_message():
@@ -32,7 +32,11 @@ def test_all_separator_levels():
 
     assert result == [
         "hello",
-        "aaaaaaaaaaaaaaa", "aaaaaaaaaa",
-        "line one", "line two", "line three",
-        "the quick brown", "fox jumps over",
+        "aaaaaaaaaaaaaaa",
+        "aaaaaaaaaa",
+        "line one",
+        "line two",
+        "line three",
+        "the quick brown",
+        "fox jumps over",
     ]
