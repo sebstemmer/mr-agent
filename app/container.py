@@ -5,7 +5,7 @@ from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.container import TelegramContainer
 from job_search.src.container import JobSearchContainer
 from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
-from tools.job_search_status import JobSearchStatusTool
+from job_search.src.job_search_status_tool import JobSearchStatusTool
 from tools.jobs_tool import JobsTool
 from utils.src.config import settings
 from utils.src.container import UtilsContainer
