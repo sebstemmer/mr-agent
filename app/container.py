@@ -1,12 +1,10 @@
-from dependency_injector import containers, providers
-from langgraph.graph.state import CompiledStateGraph
-
 from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.container import TelegramContainer
+from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
-from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
 from job_search.src.job_search_status_tool import JobSearchStatusTool
-from tools.jobs_tool import JobsTool
+from langgraph.graph.state import CompiledStateGraph
+from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
 from utils.src.config import settings
 from utils.src.container import UtilsContainer
 
@@ -20,11 +18,6 @@ class Container(containers.DeclarativeContainer):
         http_client=utils.container.http_client,
     )
 
-    jobs_tool = providers.Singleton(
-        JobsTool,
-        job_repo=job_search.container.job_repo,
-        state_repo=job_search.container.state_repo,
-    )
     job_search_status_tool = providers.Singleton(
         JobSearchStatusTool,
         state_repo=job_search.container.state_repo,

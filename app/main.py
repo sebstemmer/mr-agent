@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 from container import Container
 from dependency_injector import providers
 from fastapi import FastAPI
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph, add_messages
@@ -17,7 +17,7 @@ from utils.src.config import settings
 
 container = Container()
 
-tools = [get_weather, container.jobs_tool(), container.job_search_status_tool()]
+tools = [get_weather, container.job_search_status_tool()]
 
 llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
 llm_with_tools = llm.bind_tools(tools)
