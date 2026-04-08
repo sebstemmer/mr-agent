@@ -4,6 +4,7 @@ from langgraph.graph.state import CompiledStateGraph
 from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.container import TelegramContainer
 from job_search.src.container import JobSearchContainer
+from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
 from tools.job_search_status import JobSearchStatusTool
 from tools.jobs_tool import JobsTool
 from utils.src.config import settings
@@ -42,4 +43,11 @@ class Container(containers.DeclarativeContainer):
         save_or_update_chat_id=channels_common.container.save_or_update_chat_id_to_channel_type,
         agent=agent,
         telegram_bot_token=providers.Object(settings.TELEGRAM_BOT_TOKEN),
+    )
+
+    morning_briefing = providers.Container(
+        MorningBriefingContainer,
+        refresh_jobs=job_search.container.refreshJobs,
+        job_repo=job_search.container.job_repo,
+        send_telegram_message=telegram.container.send_telegram_message,
     )

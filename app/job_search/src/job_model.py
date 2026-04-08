@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlmodel import Field, SQLModel
 
 
@@ -7,3 +9,4 @@ class Job(SQLModel, table=True):
     of_interest: bool = Field(default=False)
     link: str | None = Field(default=None)
     summary: str = Field(default="")
+    created_at: date = Field(default_factory=date.today)

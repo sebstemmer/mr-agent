@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from datetime import date
 from typing import Annotated, TypedDict
 
+from apscheduler.triggers.cron import CronTrigger
 from container import Container
 from dependency_injector import providers
 from fastapi import FastAPI
@@ -63,6 +64,13 @@ async def lifespan(_app):
         await conn.run_sync(SQLModel.metadata.create_all)
 
     scheduler = container.utils().scheduler()
+
+    morning_briefing = container.morning_briefing().run_morning_briefing()
+    scheduler.add_job(
+        morning_briefing.run,
+        trigger=CronTrigger(hour=7, minute=0),
+    )
+
     scheduler.start()
 
     telegram_bot = container.telegram().bot()

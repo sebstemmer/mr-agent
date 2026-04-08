@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -19,6 +21,17 @@ class JobRepository:
     async def find_all_interesting(self) -> list[Job]:
         result = await self._session.exec(
             select(Job).where(Job.of_interest == True, Job.link != None)
+        )
+        return list(result.all())
+
+    async def find_by_of_interest_and_created_at(
+        self, of_interest: bool, created_at: date
+    ) -> list[Job]:
+        result = await self._session.exec(
+            select(Job).where(
+                Job.of_interest == of_interest,
+                Job.created_at == created_at,
+            )
         )
         return list(result.all())
 
