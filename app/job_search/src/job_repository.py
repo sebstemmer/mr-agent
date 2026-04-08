@@ -35,6 +35,19 @@ class JobRepository:
         )
         return list(result.all())
 
+    async def find_by_of_interest_and_link_not_null_and_created_at_between(
+        self, of_interest: bool, start_date: date, end_date: date
+    ) -> list[Job]:
+        result = await self._session.exec(
+            select(Job).where(
+                Job.of_interest == of_interest,
+                Job.link != None,
+                Job.created_at >= start_date,
+                Job.created_at <= end_date,
+            )
+        )
+        return list(result.all())
+
     async def save(self, job: Job) -> Job:
         self._session.add(job)
         await self._session.commit()

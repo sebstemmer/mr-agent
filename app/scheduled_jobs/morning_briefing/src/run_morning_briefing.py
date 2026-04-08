@@ -1,23 +1,9 @@
 from datetime import date
 
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
-from job_search.src.job_model import Job
+from job_search.src.format_jobs import format_jobs
 from job_search.src.job_repository import JobRepository
 from job_search.src.refresh_jobs import RefreshJobs
-
-
-def _format_message(jobs: list[Job]) -> str:
-    if not jobs:
-        return "No interesting jobs today."
-
-    lines = ["Good morning! Here are today's interesting jobs:\n"]
-    for job in jobs:
-        line = f"- {job.summary}"
-        if job.link:
-            line += f"\n  {job.link}"
-        lines.append(line)
-
-    return "\n\n".join(lines)
 
 
 class RunMorningBriefing:
@@ -39,5 +25,5 @@ class RunMorningBriefing:
             created_at=date.today(),
         )
 
-        message = _format_message(jobs=jobs)
+        message = format_jobs(jobs=jobs)
         await self._send_telegram_message.send(message=message)

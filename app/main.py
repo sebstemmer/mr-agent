@@ -17,7 +17,7 @@ from utils.src.config import settings
 
 container = Container()
 
-tools = [get_weather, container.job_search_status_tool()]
+tools = [get_weather, container.get_jobs_tool(), container.job_search_status_tool()]
 
 llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model="gpt-5.4-mini")
 llm_with_tools = llm.bind_tools(tools)
@@ -39,7 +39,7 @@ def should_continue(state: AgentState):
 async def llm_node(state: AgentState):
     print(state["messages"])
     system = SystemMessage(
-        content=f"You are a helpful assistant. Today's date is {date.today()}."
+        content=f"You are a helpful assistant. Today's date is {date.today()}. When a tool returns formatted data, present it to the user exactly as-is without rephrasing or summarizing."
     )
     response = await llm_with_tools.ainvoke([system] + state["messages"])
     return {"messages": [response]}
@@ -83,3 +83,4 @@ async def lifespan(_app):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(container.utils().health_controller().router)

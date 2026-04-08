@@ -45,3 +45,7 @@ jobs:
       - name: Deploy on server
         run: |
           ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "cd /home/deploy/mr-agent && docker compose pull && docker compose up -d"
+
+      - name: Verify deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@${{ secrets.SERVER_IP }} "sleep 20 && curl -f http://localhost:8000/health"

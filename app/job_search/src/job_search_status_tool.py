@@ -4,6 +4,7 @@ from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 
 from job_search.src.job_search_state_repository import JobSearchStateRepository
+from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 
 
 class JobSearchStatusInput(BaseModel):
@@ -26,4 +27,4 @@ class JobSearchStatusTool(BaseTool):
         return f"Last search: {state.last_searched_at}"
 
     def _run(self) -> str:
-        raise NotImplementedError("Use _arun")
+        raise SyncRunNotImplemented()

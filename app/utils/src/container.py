@@ -3,7 +3,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from utils.src.config import settings as config
 from utils.src.database import create_engine
+from utils.src.health_controller import HealthController
 from utils.src.http_client import create_http_client
+from utils.src.router import create_router
 from utils.src.scheduler import create_scheduler
 
 
@@ -12,3 +14,5 @@ class UtilsContainer(containers.DeclarativeContainer):
     http_client = providers.Singleton(create_http_client)
     engine = providers.Singleton(create_engine, url=config.DATABASE_URL)
     session = providers.Singleton(AsyncSession, bind=engine)
+    router = providers.Singleton(create_router)
+    health_controller = providers.Singleton(HealthController, engine=engine, router=router)
