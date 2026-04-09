@@ -8,9 +8,19 @@ from weather.src.get_weather import GetWeather
 
 
 class GetWeatherInput(BaseModel):
-    location: str = Field(description="City or location name")
+    location: str = Field(
+        description=(
+            "City or location name explicitly provided by the user. "
+            "Do NOT guess or default. If the user did not name a location, "
+            "ask them for one instead of calling this tool."
+        )
+    )
     day: int = Field(
-        description="0 for today, 1 for tomorrow, 2 for the day after tomorrow. Only supports up to 2 days ahead."
+        description=(
+            "0 for today, 1 for tomorrow, 2 for the day after tomorrow. "
+            "Only supports up to 2 days ahead. "
+            "If the user did not specify a day, ask them instead of calling this tool."
+        )
     )
 
 

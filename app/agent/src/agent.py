@@ -1,13 +1,20 @@
 from typing import Annotated, TypedDict
 
-from job_search.src.handle_job_search import JOB_SEARCH_BRANCH, HandleJobSearch
+from job_search.src.handle_job_search_node import (
+    JOB_SEARCH_BRANCH,
+    HandleJobSearchNode,
+)
 from langchain_core.messages import BaseMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.graph.state import CompiledStateGraph
-from weather.src.handle_weather import WEATHER_BRANCH, HandleWeather
+from weather.src.handle_weather_node import WEATHER_BRANCH, HandleWeatherNode
 
-from agent.src.classify_intent import ClassifyIntent
+from agent.src.classify_intent_node import ClassifyIntentNode
+
+_CLASSIFY_NODE = "classify"
+_WEATHER_NODE = WEATHER_BRANCH
+_JOB_SEARCH_NODE = JOB_SEARCH_BRANCH
 
 
 class AgentState(TypedDict):
@@ -15,39 +22,43 @@ class AgentState(TypedDict):
     current_branch: str | None
 
 
-def _route_branch(state: AgentState) -> str:
+def _route_from_start(state: AgentState) -> str:
     branch = state.get("current_branch")
     if branch == WEATHER_BRANCH:
-        return WEATHER_BRANCH
+        return _WEATHER_NODE
     if branch == JOB_SEARCH_BRANCH:
-        return JOB_SEARCH_BRANCH
-    return "classify"
+        return _JOB_SEARCH_NODE
+    return _CLASSIFY_NODE
+
+
+def _route_after_classify(state: AgentState) -> str:
+    branch = state.get("current_branch")
+    if branch == WEATHER_BRANCH:
+        return _WEATHER_NODE
+    if branch == JOB_SEARCH_BRANCH:
+        return _JOB_SEARCH_NODE
+    return END
 
 
 def _route_after_branch(state: AgentState) -> str:
     if state.get("current_branch") is None:
-        return "classify"
+        return _CLASSIFY_NODE
     return END
 
 
 def create_agent(
-    classify_intent: ClassifyIntent,
-    handle_weather: HandleWeather,
-    handle_job_search: HandleJobSearch,
+    classify_intent_node: ClassifyIntentNode,
+    handle_weather_node: HandleWeatherNode,
+    handle_job_search_node: HandleJobSearchNode,
 ) -> CompiledStateGraph:
-    classify_node = "classify"
-    weather_node = WEATHER_BRANCH
-    job_search_node = JOB_SEARCH_BRANCH
-    end_node = END
-
     async def _classify(state: AgentState):
-        return await classify_intent.classify(messages=state["messages"])
+        return await classify_intent_node.classify(messages=state["messages"])
 
     async def _weather(state: AgentState):
-        return await handle_weather.handle(messages=state["messages"])
+        return await handle_weather_node.handle(messages=state["messages"])
 
     async def _job_search(state: AgentState):
-        return await handle_job_search.handle(messages=state["messages"])
+        return await handle_job_search_node.handle(messages=state["messages"])
 
     memory = MemorySaver()
 
@@ -55,33 +66,39 @@ def create_agent(
     graph = StateGraph(AgentState)
 
     # noinspection PyTypeChecker
-    graph.add_node(classify_node, _classify)
-
+    graph.add_node(_CLASSIFY_NODE, _classify)
     # noinspection PyTypeChecker
-    graph.add_node(weather_node, _weather)
-
+    graph.add_node(_WEATHER_NODE, _weather)
     # noinspection PyTypeChecker
-    graph.add_node(job_search_node, _job_search)
+    graph.add_node(_JOB_SEARCH_NODE, _job_search)
 
     graph.add_conditional_edges(
         START,
-        _route_branch,
+        _route_from_start,
         {
-            WEATHER_BRANCH: weather_node,
-            JOB_SEARCH_BRANCH: job_search_node,
-            "classify": classify_node,
+            _WEATHER_NODE: _WEATHER_NODE,
+            _JOB_SEARCH_NODE: _JOB_SEARCH_NODE,
+            _CLASSIFY_NODE: _CLASSIFY_NODE,
         },
     )
-    graph.add_edge(classify_node, end_node)
     graph.add_conditional_edges(
-        weather_node,
-        _route_after_branch,
-        {"classify": classify_node, end_node: end_node},
+        _CLASSIFY_NODE,
+        _route_after_classify,
+        {
+            _WEATHER_NODE: _WEATHER_NODE,
+            _JOB_SEARCH_NODE: _JOB_SEARCH_NODE,
+            END: END,
+        },
     )
     graph.add_conditional_edges(
-        job_search_node,
+        _WEATHER_NODE,
         _route_after_branch,
-        {"classify": classify_node, end_node: end_node},
+        {_CLASSIFY_NODE: _CLASSIFY_NODE, END: END},
+    )
+    graph.add_conditional_edges(
+        _JOB_SEARCH_NODE,
+        _route_after_branch,
+        {_CLASSIFY_NODE: _CLASSIFY_NODE, END: END},
     )
 
     return graph.compile(checkpointer=memory)

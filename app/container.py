@@ -1,7 +1,6 @@
 from agent.src.container import AgentContainer
 from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.container import TelegramContainer
-from conversation.src.container import ConversationContainer
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
 from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
@@ -19,8 +18,6 @@ class Container(containers.DeclarativeContainer):
         http_client=utils.container.http_client,
     )
 
-    conversation = providers.Container(ConversationContainer)
-
     weather = providers.Container(
         WeatherContainer,
         http_client=utils.container.http_client,
@@ -28,11 +25,9 @@ class Container(containers.DeclarativeContainer):
 
     agent_container = providers.Container(
         AgentContainer,
-        handle_conversation=conversation.container.handle_conversation,
-        handle_conversation_tool=conversation.container.handle_conversation_tool,
-        handle_weather=weather.container.handle_weather,
+        handle_weather_node=weather.container.handle_weather_node,
         handle_weather_tool=weather.container.handle_weather_tool,
-        handle_job_search=job_search.container.handle_job_search,
+        handle_job_search_node=job_search.container.handle_job_search_node,
         handle_job_search_tool=job_search.container.handle_job_search_tool,
     )
 
