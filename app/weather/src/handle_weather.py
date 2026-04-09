@@ -86,7 +86,4 @@ class HandleWeather:
                 "current_branch": WEATHER_BRANCH,
             }
 
-        return {
-            "messages": [AIMessage(content=tool_call["args"]["response"])],
-            "current_branch": None,
-        }
+        return {"current_branch": None}

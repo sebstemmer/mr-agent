@@ -107,7 +107,4 @@ class HandleJobSearch:
                 "current_branch": JOB_SEARCH_BRANCH,
             }
 
-        return {
-            "messages": [AIMessage(content=tool_call["args"]["response"])],
-            "current_branch": None,
-        }
+        return {"current_branch": None}

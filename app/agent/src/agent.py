@@ -24,6 +24,12 @@ def _route_branch(state: AgentState) -> str:
     return "classify"
 
 
+def _route_after_branch(state: AgentState) -> str:
+    if state.get("current_branch") is None:
+        return "classify"
+    return END
+
+
 def create_agent(
     classify_intent: ClassifyIntent,
     handle_weather: HandleWeather,
@@ -32,6 +38,7 @@ def create_agent(
     classify_node = "classify"
     weather_node = WEATHER_BRANCH
     job_search_node = JOB_SEARCH_BRANCH
+    end_node = END
 
     async def _classify(state: AgentState):
         return await classify_intent.classify(messages=state["messages"])
@@ -65,8 +72,16 @@ def create_agent(
             "classify": classify_node,
         },
     )
-    graph.add_edge(classify_node, END)
-    graph.add_edge(weather_node, END)
-    graph.add_edge(job_search_node, END)
+    graph.add_edge(classify_node, end_node)
+    graph.add_conditional_edges(
+        weather_node,
+        _route_after_branch,
+        {"classify": classify_node, end_node: end_node},
+    )
+    graph.add_conditional_edges(
+        job_search_node,
+        _route_after_branch,
+        {"classify": classify_node, end_node: end_node},
+    )
 
     return graph.compile(checkpointer=memory)
