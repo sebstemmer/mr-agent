@@ -1,5 +1,6 @@
 from typing import Annotated, TypedDict
 
+from job_search.src.handle_job_search import JOB_SEARCH_BRANCH, HandleJobSearch
 from langchain_core.messages import BaseMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph, add_messages
@@ -15,23 +16,31 @@ class AgentState(TypedDict):
 
 
 def _route_branch(state: AgentState) -> str:
-    if state.get("current_branch") == WEATHER_BRANCH:
+    branch = state.get("current_branch")
+    if branch == WEATHER_BRANCH:
         return WEATHER_BRANCH
+    if branch == JOB_SEARCH_BRANCH:
+        return JOB_SEARCH_BRANCH
     return "classify"
 
 
 def create_agent(
     classify_intent: ClassifyIntent,
     handle_weather: HandleWeather,
+    handle_job_search: HandleJobSearch,
 ) -> CompiledStateGraph:
     classify_node = "classify"
     weather_node = WEATHER_BRANCH
+    job_search_node = JOB_SEARCH_BRANCH
 
     async def _classify(state: AgentState):
         return await classify_intent.classify(messages=state["messages"])
 
     async def _weather(state: AgentState):
         return await handle_weather.handle(messages=state["messages"])
+
+    async def _job_search(state: AgentState):
+        return await handle_job_search.handle(messages=state["messages"])
 
     memory = MemorySaver()
 
@@ -44,12 +53,20 @@ def create_agent(
     # noinspection PyTypeChecker
     graph.add_node(weather_node, _weather)
 
+    # noinspection PyTypeChecker
+    graph.add_node(job_search_node, _job_search)
+
     graph.add_conditional_edges(
         START,
         _route_branch,
-        {WEATHER_BRANCH: weather_node, "classify": classify_node},
+        {
+            WEATHER_BRANCH: weather_node,
+            JOB_SEARCH_BRANCH: job_search_node,
+            "classify": classify_node,
+        },
     )
     graph.add_edge(classify_node, END)
     graph.add_edge(weather_node, END)
+    graph.add_edge(job_search_node, END)
 
     return graph.compile(checkpointer=memory)

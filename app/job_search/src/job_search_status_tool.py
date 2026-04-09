@@ -13,7 +13,11 @@ class JobSearchStatusInput(BaseModel):
 
 class JobSearchStatusTool(BaseTool):
     name: str = "job_search_status"
-    description: str = "Returns when jobs were last fetched."
+    description: str = (
+        "Returns the timestamp of the last job search. Only call this when the user "
+        "explicitly asks when jobs were last fetched or about the search status. "
+        "Never call this as a fallback when other tools cannot be called."
+    )
     args_schema: Type[BaseModel] = JobSearchStatusInput
     state_repo: JobSearchStateRepository
 

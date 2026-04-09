@@ -32,6 +32,8 @@ class Container(containers.DeclarativeContainer):
         handle_conversation_tool=conversation.container.handle_conversation_tool,
         handle_weather=weather.container.handle_weather,
         handle_weather_tool=weather.container.handle_weather_tool,
+        handle_job_search=job_search.container.handle_job_search,
+        handle_job_search_tool=job_search.container.handle_job_search_tool,
     )
 
     channels_common = providers.Container(

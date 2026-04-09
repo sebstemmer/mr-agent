@@ -3,9 +3,9 @@ from typing import Type
 
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
+from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 
 from job_search.src.format_jobs import format_jobs
-from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 from job_search.src.job_repository import JobRepository
 from job_search.src.refresh_jobs import RefreshJobs
 
