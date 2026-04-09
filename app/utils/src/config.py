@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     INIT_JOB_SEARCH_MAX_PAGES: int
     JOB_SEARCH_MAX_PAGES: int
     DATABASE_URL: str
+    LOG_LEVEL: str
 
     class Config:
         env_file = ".env"

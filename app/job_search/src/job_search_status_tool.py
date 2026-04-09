@@ -2,9 +2,9 @@ from typing import Type
 
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
+from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 
 from job_search.src.job_search_state_repository import JobSearchStateRepository
-from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 
 
 class JobSearchStatusInput(BaseModel):
