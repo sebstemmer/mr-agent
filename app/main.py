@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 from container import Container
@@ -24,7 +25,7 @@ async def lifespan(_app):
     morning_briefing = container.morning_briefing().run_morning_briefing()
     scheduler.add_job(
         morning_briefing.run,
-        trigger=CronTrigger(hour=7, minute=0),
+        trigger=CronTrigger(hour=7, minute=0, timezone=ZoneInfo("Europe/Berlin")),
     )
 
     scheduler.start()

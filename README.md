@@ -1,5 +1,11 @@
 # mr-agent
 
+## Run Postgres locally
+
+```bash
+docker run -d --name mr-agent-pg -e POSTGRES_USER=mr_agent -e POSTGRES_PASSWORD='<password>' -e POSTGRES_DB=mr_agent -p 5432:5432 -v mr-agent-pg-data:/var/lib/postgresql postgres:18
+```
+
 ## Update dependencies
 
 ```bash
@@ -29,7 +35,14 @@ rm ansible/github
 
 ### 3. Create production environment file
 
-Set `DATABASE_URL=sqlite+aiosqlite:///data/database.db`
+Set the Postgres connection variables:
+
+```
+POSTGRES_USER=mr_agent
+POSTGRES_PASSWORD=<password>
+POSTGRES_HOST=postgres
+POSTGRES_DB=mr_agent
+```
 
 ### 4. Create Ansible inventory
 

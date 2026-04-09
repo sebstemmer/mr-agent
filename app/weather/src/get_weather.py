@@ -22,7 +22,9 @@ class GetWeather:
         text = response.text.strip()
         sections = text.split("┌─────────────┐")
         if len(sections) >= 2:
+            # noinspection PyTypeChecker
             header = sections[0].split("\n")[0]
+            # noinspection PyTypeChecker
             day_section = sections[day + 1] if day + 1 < len(sections) else sections[-1]
             text = header + "\n┌─────────────┐" + day_section
 

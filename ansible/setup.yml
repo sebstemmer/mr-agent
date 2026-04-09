@@ -74,7 +74,7 @@
 
     - name: Create app directory
       file:
-        path: "{{ app_dir }}/data"
+        path: "{{ app_dir }}"
         state: directory
         owner: "{{ deploy_user }}"
         group: "{{ deploy_user }}"

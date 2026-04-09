@@ -8,7 +8,10 @@ class Settings(BaseSettings):
     JOB_SEARCH_QUERY: str
     INIT_JOB_SEARCH_MAX_PAGES: int
     JOB_SEARCH_MAX_PAGES: int
-    DATABASE_URL: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_DB: str
     LOG_LEVEL: str
 
     class Config:

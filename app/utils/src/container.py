@@ -12,7 +12,13 @@ from utils.src.scheduler import create_scheduler
 class UtilsContainer(containers.DeclarativeContainer):
     scheduler = providers.Singleton(create_scheduler)
     http_client = providers.Singleton(create_http_client)
-    engine = providers.Singleton(create_engine, url=config.DATABASE_URL)
+    engine = providers.Singleton(
+        create_engine,
+        user=config.POSTGRES_USER,
+        password=config.POSTGRES_PASSWORD,
+        host=config.POSTGRES_HOST,
+        db=config.POSTGRES_DB,
+    )
     session = providers.Singleton(AsyncSession, bind=engine)
     router = providers.Singleton(create_router)
     health_controller = providers.Singleton(HealthController, engine=engine, router=router)
