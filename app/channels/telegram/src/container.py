@@ -5,16 +5,12 @@ from channels.telegram.src.handle_telegram_init import HandleTelegramInit
 from channels.telegram.src.handle_telegram_message import HandleTelegramMessage
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
 from dependency_injector import containers, providers
-from job_search.src.container import JobSearchContainer
 from utils.src.config import settings
 
 
 class TelegramChannelContainer(containers.DeclarativeContainer):
     telegram_bot_token = settings.TELEGRAM_BOT_TOKEN
 
-    utils_container = providers.DependenciesContainer()
-    weather_container = providers.DependenciesContainer()
-    job_search_container: JobSearchContainer = providers.DependenciesContainer()
     agent_container: AgentContainer = providers.DependenciesContainer()
     channels_common_container: ChannelsCommonContainer = (
         providers.DependenciesContainer()

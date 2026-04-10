@@ -3,7 +3,6 @@ import logging
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
 from utils.src.config import settings
-from utils.src.container import UtilsContainer
 
 from agent.job_search.src.get_jobs_tool import GetJobsTool
 from agent.job_search.src.handle_job_search_node import HandleJobSearchNode
@@ -12,7 +11,6 @@ from agent.job_search.src.job_search_status_tool import JobSearchStatusTool
 
 
 class JobSearchAgentContainer(containers.DeclarativeContainer):
-    utils_container: UtilsContainer = providers.DependenciesContainer()
     job_search_container: JobSearchContainer = providers.DependenciesContainer()
 
     system_prompt = providers.Dependency(instance_of=str)

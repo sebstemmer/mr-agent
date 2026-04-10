@@ -2,7 +2,6 @@ import logging
 
 from dependency_injector import containers, providers
 from utils.src.config import settings
-from utils.src.container import UtilsContainer
 from weather.src.container import WeatherContainer
 
 from agent.weather.src.get_weather_tool import GetWeatherTool
@@ -13,7 +12,6 @@ from agent.weather.src.handle_weather_tool import HandleWeatherTool
 class WeatherAgentContainer(containers.DeclarativeContainer):
     system_prompt = providers.Dependency(instance_of=str)
 
-    utils_container: UtilsContainer = providers.DependenciesContainer()
     weather_container: WeatherContainer = providers.DependenciesContainer()
 
     get_weather_tool = providers.Singleton(

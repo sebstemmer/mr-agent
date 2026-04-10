@@ -3,7 +3,6 @@ import logging
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
 from utils.src.config import settings
-from utils.src.container import UtilsContainer
 from weather.src.container import WeatherContainer
 
 from agent.agent.src.agent import create_agent
@@ -18,20 +17,17 @@ SYSTEM_PROMPT = (
 
 
 class AgentContainer(containers.DeclarativeContainer):
-    utils_container: UtilsContainer = providers.DependenciesContainer()
     weather_container: WeatherContainer = providers.DependenciesContainer()
     job_search_container: JobSearchContainer = providers.DependenciesContainer()
 
     weather_agent_container = providers.Container(
         WeatherAgentContainer,
-        utils_container=utils_container,
         weather_container=weather_container,
         system_prompt=SYSTEM_PROMPT,
     )
 
     job_search_agent_container = providers.Container(
         JobSearchAgentContainer,
-        utils_container=utils_container,
         job_search_container=job_search_container,
         system_prompt=SYSTEM_PROMPT,
     )

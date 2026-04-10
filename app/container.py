@@ -20,7 +20,6 @@ class Container(containers.DeclarativeContainer):
 
     agent_container = providers.Container(
         AgentContainer,
-        utils_container=utils_container,
         weather_container=weather_container,
         job_search_container=job_search_container,
     )
@@ -28,15 +27,11 @@ class Container(containers.DeclarativeContainer):
     channels_container = providers.Container(
         ChannelsContainer,
         utils_container=utils_container,
-        weather_container=weather_container,
-        job_search_container=job_search_container,
         agent_container=agent_container,
     )
 
     morning_briefing = providers.Container(
         MorningBriefingContainer,
-        utils_container=utils_container,
-        weather_container=weather_container,
         job_search_container=job_search_container,
         telegram_channel_container=channels_container.telegram_channel_container,
     )
