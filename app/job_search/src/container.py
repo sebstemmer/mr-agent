@@ -18,6 +18,7 @@ from job_search.src.refresh_jobs import RefreshJobs
 class JobSearchContainer(containers.DeclarativeContainer):
     session = providers.Dependency(instance_of=AsyncSession)
     http_client = providers.Dependency(instance_of=AsyncClient)
+    system_prompt = providers.Dependency(instance_of=str)
 
     job_repo = providers.Singleton(JobRepository, session=session)
     state_repo = providers.Singleton(JobSearchStateRepository, session=session)
@@ -46,6 +47,7 @@ class JobSearchContainer(containers.DeclarativeContainer):
         HandleJobSearchNode,
         api_key=settings.OPENAI_API_KEY,
         model="gpt-5.4-mini",
+        system_prompt=system_prompt,
         get_jobs_tool=get_jobs_tool,
         job_search_status_tool=job_search_status_tool,
         logger=providers.Singleton(logging.getLogger, "job_search"),

@@ -12,6 +12,7 @@ from weather.src.handle_weather_tool import HandleWeatherTool
 
 class WeatherContainer(containers.DeclarativeContainer):
     http_client = providers.Dependency(instance_of=AsyncClient)
+    system_prompt = providers.Dependency(instance_of=str)
 
     get_weather = providers.Singleton(
         GetWeather,
@@ -26,6 +27,7 @@ class WeatherContainer(containers.DeclarativeContainer):
         HandleWeatherNode,
         api_key=settings.OPENAI_API_KEY,
         model="gpt-5.4-mini",
+        system_prompt=system_prompt,
         get_weather_tool=get_weather_tool,
         logger=providers.Singleton(logging.getLogger, "weather"),
     )

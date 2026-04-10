@@ -10,6 +10,11 @@ from weather.src.handle_weather_tool import HandleWeatherTool
 from agent.src.agent import create_agent
 from agent.src.classify_intent_node import ClassifyIntentNode
 
+SYSTEM_PROMPT = (
+    "You are a personal assistant. Today is {today}. "
+    "Keep responses concise and do not repeat the same information."
+)
+
 
 class AgentContainer(containers.DeclarativeContainer):
     handle_weather_node = providers.Dependency(instance_of=HandleWeatherNode)
@@ -21,6 +26,7 @@ class AgentContainer(containers.DeclarativeContainer):
         ClassifyIntentNode,
         api_key=settings.OPENAI_API_KEY,
         model="gpt-5.4-mini",
+        system_prompt=SYSTEM_PROMPT,
         handle_weather_tool=handle_weather_tool,
         handle_job_search_tool=handle_job_search_tool,
         logger=providers.Singleton(logging.getLogger, "agent"),

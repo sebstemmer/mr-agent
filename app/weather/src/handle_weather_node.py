@@ -3,8 +3,8 @@ from typing import Type
 
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import BaseTool
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
+from utils.src.llm_with_system_prompt import LlmWithSystemPrompt
 from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.src.unknown_tool_called import UnknownToolCalled
 
@@ -37,22 +37,23 @@ class HandleWeatherNode:
         self,
         api_key: str,
         model: str,
+        system_prompt: str,
         get_weather_tool: GetWeatherTool,
         logger: Logger,
     ):
         self._get_weather_tool = get_weather_tool
         self._logger = logger
-
-        # noinspection PyTypeChecker
-        llm = ChatOpenAI(api_key=api_key, model=model)
-        self._llm = llm.bind_tools(
-            [get_weather_tool, _LeaveWeatherBranchTool()],
+        self._llm = LlmWithSystemPrompt(
+            api_key=api_key,
+            model=model,
+            system_prompt=system_prompt,
+            tools=[get_weather_tool, _LeaveWeatherBranchTool()],
             tool_choice="auto",
         )
 
     async def handle(self, messages: list[BaseMessage]) -> dict:
         self._logger.info("[branch=%s] handling", WEATHER_BRANCH)
-        response = await self._llm.ainvoke(messages)
+        response = await self._llm.ainvoke(messages=messages)
 
         if not response.tool_calls:
             self._logger.info("[branch=%s] text response", WEATHER_BRANCH)

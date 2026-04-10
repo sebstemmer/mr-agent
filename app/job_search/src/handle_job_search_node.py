@@ -3,8 +3,8 @@ from typing import Type
 
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import BaseTool
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
+from utils.src.llm_with_system_prompt import LlmWithSystemPrompt
 from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.src.unknown_tool_called import UnknownToolCalled
 
@@ -38,6 +38,7 @@ class HandleJobSearchNode:
         self,
         api_key: str,
         model: str,
+        system_prompt: str,
         get_jobs_tool: GetJobsTool,
         job_search_status_tool: JobSearchStatusTool,
         logger: Logger,
@@ -45,17 +46,17 @@ class HandleJobSearchNode:
         self._get_jobs_tool = get_jobs_tool
         self._job_search_status_tool = job_search_status_tool
         self._logger = logger
-
-        # noinspection PyTypeChecker
-        llm = ChatOpenAI(api_key=api_key, model=model)
-        self._llm = llm.bind_tools(
-            [get_jobs_tool, job_search_status_tool, _LeaveJobSearchBranchTool()],
+        self._llm = LlmWithSystemPrompt(
+            api_key=api_key,
+            model=model,
+            system_prompt=system_prompt,
+            tools=[get_jobs_tool, job_search_status_tool, _LeaveJobSearchBranchTool()],
             tool_choice="auto",
         )
 
     async def handle(self, messages: list[BaseMessage]) -> dict:
         self._logger.info("[branch=%s] handling", JOB_SEARCH_BRANCH)
-        response = await self._llm.ainvoke(messages)
+        response = await self._llm.ainvoke(messages=messages)
 
         if not response.tool_calls:
             self._logger.info("[branch=%s] text response", JOB_SEARCH_BRANCH)

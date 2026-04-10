@@ -1,4 +1,4 @@
-from agent.src.container import AgentContainer
+from agent.src.container import SYSTEM_PROMPT, AgentContainer
 from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.container import TelegramContainer
 from dependency_injector import containers, providers
@@ -16,11 +16,13 @@ class Container(containers.DeclarativeContainer):
         JobSearchContainer,
         session=utils.container.session,
         http_client=utils.container.http_client,
+        system_prompt=providers.Object(SYSTEM_PROMPT),
     )
 
     weather = providers.Container(
         WeatherContainer,
         http_client=utils.container.http_client,
+        system_prompt=providers.Object(SYSTEM_PROMPT),
     )
 
     agent_container = providers.Container(
