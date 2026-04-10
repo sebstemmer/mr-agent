@@ -24,17 +24,6 @@ class JobRepository:
         )
         return list(result.all())
 
-    async def find_by_of_interest_and_created_at(
-        self, of_interest: bool, created_at: date
-    ) -> list[Job]:
-        result = await self._session.exec(
-            select(Job).where(
-                Job.of_interest == of_interest,
-                Job.created_at == created_at,
-            )
-        )
-        return list(result.all())
-
     async def find_by_of_interest_and_link_not_null_and_created_at_between(
         self, of_interest: bool, start_date: date, end_date: date
     ) -> list[Job]:

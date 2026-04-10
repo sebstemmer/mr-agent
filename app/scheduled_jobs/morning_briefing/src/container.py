@@ -14,6 +14,6 @@ class MorningBriefingContainer(containers.DeclarativeContainer):
     run_morning_briefing = providers.Singleton(
         RunMorningBriefing,
         refresh_jobs=job_search_container.refresh_jobs,
-        job_repo=job_search_container.job_repo,
+        get_interesting_jobs=job_search_container.get_interesting_jobs,
         send_telegram_message=telegram_channel_container.send_telegram_message,
     )

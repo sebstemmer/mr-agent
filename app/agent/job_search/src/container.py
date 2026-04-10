@@ -18,7 +18,7 @@ class JobSearchAgentContainer(containers.DeclarativeContainer):
 
     get_jobs_tool = providers.Singleton(
         GetJobsTool,
-        job_repo=job_search_container.job_repo,
+        get_interesting_jobs=job_search_container.get_interesting_jobs,
         refresh_jobs=job_search_container.refresh_jobs,
     )
     job_search_status_tool = providers.Singleton(
