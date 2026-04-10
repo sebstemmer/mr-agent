@@ -8,7 +8,7 @@ from utils.src.llm_with_system_prompt import LlmWithSystemPrompt
 from utils.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.src.unknown_tool_called import UnknownToolCalled
 
-from weather.src.get_weather_tool import GetWeatherTool
+from agent.weather.src.get_weather_tool import GetWeatherTool
 
 WEATHER_BRANCH = "weather"
 LEAVE_WEATHER_BRANCH_TOOL_NAME = "leave_weather_branch"

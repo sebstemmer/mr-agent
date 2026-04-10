@@ -1,16 +1,16 @@
 from typing import Annotated, TypedDict
 
-from job_search.src.handle_job_search_node import (
-    JOB_SEARCH_BRANCH,
-    HandleJobSearchNode,
-)
 from langchain_core.messages import BaseMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.graph.state import CompiledStateGraph
-from weather.src.handle_weather_node import WEATHER_BRANCH, HandleWeatherNode
 
-from agent.src.classify_intent_node import ClassifyIntentNode
+from agent.agent.src.classify_intent_node import ClassifyIntentNode
+from agent.job_search.src.handle_job_search_node import (
+    JOB_SEARCH_BRANCH,
+    HandleJobSearchNode,
+)
+from agent.weather.src.handle_weather_node import WEATHER_BRANCH, HandleWeatherNode
 
 _CLASSIFY_NODE = "classify"
 _WEATHER_NODE = WEATHER_BRANCH

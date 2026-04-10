@@ -48,12 +48,12 @@ class RefreshJobs:
         client: httpx.AsyncClient,
         job_repo: JobRepository,
         state_repo: JobSearchStateRepository,
-        get_job_search_state: GetOrCreateJobSearchState,
+        get_or_create_job_search_state: GetOrCreateJobSearchState,
     ):
         self._client = client
         self._job_repo = job_repo
         self._state_repo = state_repo
-        self._get_job_search_state = get_job_search_state
+        self._get_job_search_state = get_or_create_job_search_state
 
     async def refresh(self) -> None:
         state = await self._get_job_search_state.get_or_create()

@@ -1,54 +1,42 @@
-from agent.src.container import SYSTEM_PROMPT, AgentContainer
-from channels.common.src.container import ChannelsCommonContainer
-from channels.telegram.src.container import TelegramContainer
+from agent.agent.src.container import AgentContainer
+from channels.channels.src.container import ChannelsContainer
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
 from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
-from utils.src.config import settings
 from utils.src.container import UtilsContainer
 from weather.src.container import WeatherContainer
 
 
 class Container(containers.DeclarativeContainer):
-    utils = providers.Container(UtilsContainer)
+    utils_container = providers.Container(UtilsContainer)
 
-    job_search = providers.Container(
-        JobSearchContainer,
-        session=utils.container.session,
-        http_client=utils.container.http_client,
-        system_prompt=providers.Object(SYSTEM_PROMPT),
+    weather_container = providers.Container(
+        WeatherContainer, utils_container=utils_container
     )
 
-    weather = providers.Container(
-        WeatherContainer,
-        http_client=utils.container.http_client,
-        system_prompt=providers.Object(SYSTEM_PROMPT),
+    job_search_container = providers.Container(
+        JobSearchContainer, utils_container=utils_container
     )
 
     agent_container = providers.Container(
         AgentContainer,
-        handle_weather_node=weather.container.handle_weather_node,
-        handle_weather_tool=weather.container.handle_weather_tool,
-        handle_job_search_node=job_search.container.handle_job_search_node,
-        handle_job_search_tool=job_search.container.handle_job_search_tool,
+        utils_container=utils_container,
+        weather_container=weather_container,
+        job_search_container=job_search_container,
     )
 
-    channels_common = providers.Container(
-        ChannelsCommonContainer,
-        session=utils.container.session,
-    )
-
-    telegram = providers.Container(
-        TelegramContainer,
-        chat_repo=channels_common.container.chat_repo,
-        save_or_update_chat_id=channels_common.container.save_or_update_chat_id_to_channel_type,
-        agent=agent_container.container.agent,
-        telegram_bot_token=providers.Object(settings.TELEGRAM_BOT_TOKEN),
+    channels_container = providers.Container(
+        ChannelsContainer,
+        utils_container=utils_container,
+        weather_container=weather_container,
+        job_search_container=job_search_container,
+        agent_container=agent_container,
     )
 
     morning_briefing = providers.Container(
         MorningBriefingContainer,
-        refresh_jobs=job_search.container.refreshJobs,
-        job_repo=job_search.container.job_repo,
-        send_telegram_message=telegram.container.send_telegram_message,
+        utils_container=utils_container,
+        weather_container=weather_container,
+        job_search_container=job_search_container,
+        telegram_channel_container=channels_container.telegram_channel_container,
     )

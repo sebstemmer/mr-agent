@@ -1,11 +1,12 @@
 from logging import Logger
 
-from job_search.src.handle_job_search_node import JOB_SEARCH_BRANCH
-from job_search.src.handle_job_search_tool import HandleJobSearchTool
 from langchain_core.messages import AIMessage, BaseMessage
 from utils.src.llm_with_system_prompt import LlmWithSystemPrompt
-from weather.src.handle_weather_node import WEATHER_BRANCH
-from weather.src.handle_weather_tool import HandleWeatherTool
+
+from agent.job_search.src.handle_job_search_node import JOB_SEARCH_BRANCH
+from agent.job_search.src.handle_job_search_tool import HandleJobSearchTool
+from agent.weather.src.handle_weather_node import WEATHER_BRANCH
+from agent.weather.src.handle_weather_tool import HandleWeatherTool
 
 _TOOL_NAME_TO_BRANCH: dict[str, str] = {
     "handle_weather": WEATHER_BRANCH,

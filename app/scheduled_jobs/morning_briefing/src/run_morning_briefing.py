@@ -1,7 +1,7 @@
 from datetime import date
 
+from agent.job_search.src.format_jobs import format_jobs
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
-from job_search.src.format_jobs import format_jobs
 from job_search.src.job_repository import JobRepository
 from job_search.src.refresh_jobs import RefreshJobs
 
