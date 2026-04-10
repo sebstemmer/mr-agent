@@ -9,8 +9,6 @@ from utils.src.config import settings
 
 
 class TelegramChannelContainer(containers.DeclarativeContainer):
-    telegram_bot_token = settings.TELEGRAM_BOT_TOKEN
-
     agent_container: AgentContainer = providers.DependenciesContainer()
     channels_common_container: ChannelsCommonContainer = (
         providers.DependenciesContainer()
@@ -29,7 +27,7 @@ class TelegramChannelContainer(containers.DeclarativeContainer):
 
     bot = providers.Singleton(
         TelegramBot,
-        token=telegram_bot_token,
+        token=settings.TELEGRAM_BOT_TOKEN,
         handle_init=handle_init,
         handle_message=handle_message,
     )

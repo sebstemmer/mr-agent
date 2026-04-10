@@ -3,6 +3,7 @@ import logging
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
 from utils.src.config import settings
+from utils.src.llm import CHAT_GPT_5_4_MINI_MODEL
 from weather.src.container import WeatherContainer
 
 from agent.agent.src.agent import create_agent
@@ -35,7 +36,7 @@ class AgentContainer(containers.DeclarativeContainer):
     classify_intent_node = providers.Singleton(
         ClassifyIntentNode,
         api_key=settings.OPENAI_API_KEY,
-        model="gpt-5.4-mini",
+        model=CHAT_GPT_5_4_MINI_MODEL,
         system_prompt=SYSTEM_PROMPT,
         handle_weather_tool=weather_agent_container.handle_weather_tool,
         handle_job_search_tool=job_search_agent_container.handle_job_search_tool,
