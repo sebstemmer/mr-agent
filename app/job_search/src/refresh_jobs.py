@@ -1,19 +1,33 @@
 import json
 import logging
+import secrets
+import string
 from datetime import date
 
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from utils.src.config import settings
-from utils.src.llm import CHAT_GPT_5_4_MINI_MODEL
+from utils.common.src.config import settings
+from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
 
 from job_search.src.get_job_search_state import GetOrCreateJobSearchState
 from job_search.src.job_model import Job
 from job_search.src.job_repository import JobRepository
 from job_search.src.job_search_state_repository import JobSearchStateRepository
 
-_evaluation_llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model=CHAT_GPT_5_4_MINI_MODEL)
+_PUBLIC_ID_ALPHABET = string.ascii_lowercase + string.digits
+_PUBLIC_ID_LENGTH = 5
+
+
+def _generate_public_id() -> str:
+    return "".join(
+        secrets.choice(_PUBLIC_ID_ALPHABET) for _ in range(_PUBLIC_ID_LENGTH)
+    )
+
+
+_evaluation_llm = ChatOpenAI(
+    api_key=settings.OPENAI_API_KEY, model=CHAT_GPT_5_4_MINI_MODEL
+)
 _evaluation_llm_json = _evaluation_llm.bind(response_format={"type": "json_object"})
 
 _EVALUATION_PROMPT = f"""You are a job posting evaluator. Determine if a job posting is interesting for the user, explain why, and provide a summary.
@@ -98,6 +112,7 @@ class RefreshJobs:
         link = await self._resolve_link(job=job)
 
         db_job = Job(
+            public_id=_generate_public_id(),
             job_id=job_id,
             of_interest=interesting,
             link=link,

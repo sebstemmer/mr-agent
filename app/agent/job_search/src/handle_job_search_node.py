@@ -4,9 +4,9 @@ from typing import Type
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
-from utils.src.llm_with_system_prompt import LlmWithSystemPrompt
-from utils.src.sync_run_not_implemented import SyncRunNotImplemented
-from utils.src.unknown_tool_called import UnknownToolCalled
+from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
+from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
+from utils.common.src.unknown_tool_called import UnknownToolCalled
 
 from agent.job_search.src.get_jobs_tool import GetJobsTool
 from agent.job_search.src.job_search_status_tool import JobSearchStatusTool

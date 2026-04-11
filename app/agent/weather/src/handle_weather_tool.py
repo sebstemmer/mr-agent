@@ -1,5 +1,5 @@
 from langchain_core.tools import BaseTool
-from utils.src.sync_run_not_implemented import SyncRunNotImplemented
+from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
 
 class HandleWeatherTool(BaseTool):

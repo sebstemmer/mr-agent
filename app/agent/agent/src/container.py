@@ -2,8 +2,8 @@ import logging
 
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
-from utils.src.config import settings
-from utils.src.llm import CHAT_GPT_5_4_MINI_MODEL
+from utils.common.src.config import settings
+from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
 from weather.src.container import WeatherContainer
 
 from agent.agent.src.agent import create_agent

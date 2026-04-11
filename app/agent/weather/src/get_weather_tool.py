@@ -2,8 +2,7 @@ from typing import Type
 
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
-from utils.src.sync_run_not_implemented import SyncRunNotImplemented
-
+from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from weather.src.get_weather import GetWeather
 
 

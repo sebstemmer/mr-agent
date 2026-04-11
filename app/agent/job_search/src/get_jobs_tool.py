@@ -5,7 +5,7 @@ from job_search.src.get_interesting_jobs import GetInterestingJobs
 from job_search.src.refresh_jobs import RefreshJobs
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
-from utils.src.sync_run_not_implemented import SyncRunNotImplemented
+from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
 from agent.job_search.src.format_jobs import format_jobs
 

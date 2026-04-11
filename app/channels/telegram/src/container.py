@@ -5,7 +5,7 @@ from channels.telegram.src.handle_telegram_init import HandleTelegramInit
 from channels.telegram.src.handle_telegram_message import HandleTelegramMessage
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
 from dependency_injector import containers, providers
-from utils.src.config import settings
+from utils.common.src.config import settings
 
 
 class TelegramChannelContainer(containers.DeclarativeContainer):

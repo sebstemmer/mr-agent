@@ -1,5 +1,5 @@
 from dependency_injector import containers, providers
-from utils.src.container import UtilsContainer
+from utils.utils.src.container import UtilsContainer
 
 from job_search.src.get_interesting_jobs import GetInterestingJobs
 from job_search.src.get_job_search_state import GetOrCreateJobSearchState

@@ -3,7 +3,7 @@ from channels.common.src.save_or_update_chat_id_to_channel_type import (
     SaveOrUpdateChatIdToChannelType,
 )
 from dependency_injector import containers, providers
-from utils.src.container import UtilsContainer
+from utils.utils.src.container import UtilsContainer
 
 
 class ChannelsCommonContainer(containers.DeclarativeContainer):

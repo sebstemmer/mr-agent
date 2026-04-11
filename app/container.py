@@ -3,7 +3,7 @@ from channels.channels.src.container import ChannelsContainer
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
 from scheduled_jobs.morning_briefing.src.container import MorningBriefingContainer
-from utils.src.container import UtilsContainer
+from utils.utils.src.container import UtilsContainer
 from weather.src.container import WeatherContainer
 
 

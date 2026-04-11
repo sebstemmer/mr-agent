@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 from container import Container
 from fastapi import FastAPI
 from sqlmodel import SQLModel
-from utils.src.config import settings
+from utils.common.src.config import settings
 
 logging.basicConfig(level=settings.LOG_LEVEL, force=True)
 logging.getLogger("agent").setLevel(settings.LOG_LEVEL)
@@ -19,6 +19,8 @@ container: Container = Container()
 async def lifespan(_app):
     async with container.utils_container().engine().begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+
+    await container.utils_container().patcher_container().patcher().patch()
 
     scheduler = container.utils_container().scheduler()
 

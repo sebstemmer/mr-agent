@@ -2,7 +2,7 @@ from agent.agent.src.container import AgentContainer
 from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.container import TelegramChannelContainer
 from dependency_injector import containers, providers
-from utils.src.container import UtilsContainer
+from utils.utils.src.container import UtilsContainer
 
 
 class ChannelsContainer(containers.DeclarativeContainer):
