@@ -14,8 +14,9 @@ class LikeJobInput(BaseModel):
 class LikeJobTool(BaseTool):
     name: str = "like_job"
     description: str = (
-        "Marks a job posting as liked by the user. Ask the user for the public id "
-        "of the job they want to like. Requires human confirmation before applying."
+        "Marks a job posting as liked by the user. Call this tool whenever the user "
+        "expresses intent to like a job (e.g. 'like job 3', 'I like that one'). "
+        "Resolve the public_id from the most recent job listing in the conversation."
     )
     args_schema: Type[BaseModel] = LikeJobInput
     like_job: LikeJob

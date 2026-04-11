@@ -6,8 +6,8 @@ def format_jobs(jobs: list[Job]) -> str:
         return "No interesting jobs found."
 
     blocks = []
-    for job in jobs:
-        block = f"id: {job.public_id}\n{job.summary}"
+    for index, job in enumerate(jobs, start=1):
+        block = f"{index}. id: {job.public_id}\n{job.summary}"
         if job.link:
             block += f"\n{job.link}"
         blocks.append(block)
