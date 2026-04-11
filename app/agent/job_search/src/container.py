@@ -9,6 +9,7 @@ from agent.job_search.src.get_jobs_tool import GetJobsTool
 from agent.job_search.src.handle_job_search_node import HandleJobSearchNode
 from agent.job_search.src.handle_job_search_tool import HandleJobSearchTool
 from agent.job_search.src.job_search_status_tool import JobSearchStatusTool
+from agent.job_search.src.like_job_tool import LikeJobTool
 
 
 class JobSearchAgentContainer(containers.DeclarativeContainer):
@@ -25,6 +26,10 @@ class JobSearchAgentContainer(containers.DeclarativeContainer):
         JobSearchStatusTool,
         state_repo=job_search_container.state_repo,
     )
+    like_job_tool = providers.Singleton(
+        LikeJobTool,
+        like_job=job_search_container.like_job,
+    )
     handle_job_search_tool = providers.Singleton(HandleJobSearchTool)
     handle_job_search_node = providers.Singleton(
         HandleJobSearchNode,
@@ -33,5 +38,6 @@ class JobSearchAgentContainer(containers.DeclarativeContainer):
         system_prompt=system_prompt,
         get_jobs_tool=get_jobs_tool,
         job_search_status_tool=job_search_status_tool,
+        like_job_tool=like_job_tool,
         logger=providers.Singleton(logging.getLogger, "job_search"),
     )

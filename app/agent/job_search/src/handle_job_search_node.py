@@ -10,6 +10,7 @@ from utils.common.src.unknown_tool_called import UnknownToolCalled
 
 from agent.job_search.src.get_jobs_tool import GetJobsTool
 from agent.job_search.src.job_search_status_tool import JobSearchStatusTool
+from agent.job_search.src.like_job_tool import LikeJobTool
 
 JOB_SEARCH_BRANCH = "job_search"
 LEAVE_JOB_SEARCH_BRANCH_TOOL_NAME = "leave_job_search_branch"
@@ -41,16 +42,23 @@ class HandleJobSearchNode:
         system_prompt: str,
         get_jobs_tool: GetJobsTool,
         job_search_status_tool: JobSearchStatusTool,
+        like_job_tool: LikeJobTool,
         logger: Logger,
     ):
         self._get_jobs_tool = get_jobs_tool
         self._job_search_status_tool = job_search_status_tool
+        self._like_job_tool = like_job_tool
         self._logger = logger
         self._llm = LlmWithSystemPrompt(
             api_key=api_key,
             model=model,
             system_prompt=system_prompt,
-            tools=[get_jobs_tool, job_search_status_tool, _LeaveJobSearchBranchTool()],
+            tools=[
+                get_jobs_tool,
+                job_search_status_tool,
+                like_job_tool,
+                _LeaveJobSearchBranchTool(),
+            ],
             tool_choice="auto",
         )
 
@@ -82,6 +90,13 @@ class HandleJobSearchNode:
 
         if tool_name == self._job_search_status_tool.name:
             result = await self._job_search_status_tool.ainvoke(input=tool_call["args"])
+            return {
+                "messages": [AIMessage(content=result)],
+                "current_branch": JOB_SEARCH_BRANCH,
+            }
+
+        if tool_name == self._like_job_tool.name:
+            result = await self._like_job_tool.ainvoke(input=tool_call["args"])
             return {
                 "messages": [AIMessage(content=result)],
                 "current_branch": JOB_SEARCH_BRANCH,

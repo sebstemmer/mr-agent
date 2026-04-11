@@ -5,11 +5,12 @@ def format_jobs(jobs: list[Job]) -> str:
     if not jobs:
         return "No interesting jobs found."
 
-    lines = []
+    blocks = []
     for job in jobs:
-        line = f"- {job.summary}"
+        block = f"id: {job.public_id}\n{job.summary}"
         if job.link:
-            line += f"\n  {job.link}"
-        lines.append(line)
+            block += f"\n{job.link}"
+        blocks.append(block)
 
-    return "\n\n".join(lines)
+    separator = "\n###############\n"
+    return separator.join(blocks)

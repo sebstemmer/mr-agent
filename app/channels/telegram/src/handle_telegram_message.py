@@ -5,6 +5,7 @@ from channels.common.src.split_message import split_message
 from channels.telegram.src.const import CHANNEL_TYPE
 from langchain_core.messages import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import Command
 from telegram import Update
 
 
@@ -22,10 +23,25 @@ class HandleTelegramMessage:
             channel_type=CHANNEL_TYPE,
             chat_id=str(update.effective_chat.id),
         )
-        result = await self._agent.ainvoke(
-            {"messages": [HumanMessage(content=update.message.text)]},
-            config={"configurable": {"thread_id": str(update.effective_user.id)}},
-        )
-        content = result["messages"][-1].content
+
+        config = {"configurable": {"thread_id": str(update.effective_user.id)}}
+        text = update.message.text
+
+        state = await self._agent.aget_state(config)
+        is_paused = any(task.interrupts for task in state.tasks)
+
+        if is_paused:
+            graph_input = Command(resume=text)
+        else:
+            graph_input = {"messages": [HumanMessage(content=text)]}
+
+        result = await self._agent.ainvoke(graph_input, config=config)
+
+        interrupts = result.get("__interrupt__")
+        if interrupts:
+            content = interrupts[0].value["question"]
+        else:
+            content = result["messages"][-1].content
+
         for message in split_message(text=content, max_length=4096):
             await update.message.reply_text(message)
