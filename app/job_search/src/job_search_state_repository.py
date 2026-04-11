@@ -1,25 +1,28 @@
 from datetime import date
 
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlmodel import select, update
 
 from job_search.src.search_state_model import SearchState
 
 
 class JobSearchStateRepository:
-    def __init__(self, session: AsyncSession):
-        self._session = session
+    def __init__(self, session_factory: async_sessionmaker):
+        self._session_factory = session_factory
 
     async def find(self) -> SearchState | None:
-        result = await self._session.exec(select(SearchState))
-        return result.first()
+        async with self._session_factory() as session:
+            result = await session.exec(select(SearchState))
+            return result.first()
 
     async def save(self, state: SearchState) -> SearchState:
-        self._session.add(state)
-        await self._session.commit()
-        await self._session.refresh(state)
-        return state
+        async with self._session_factory() as session:
+            session.add(state)
+            await session.commit()
+            await session.refresh(state)
+            return state
 
-    async def update_last_searched_at(self, state: SearchState, value: date) -> None:
-        state.last_searched_at = value
-        await self._session.commit()
+    async def set_last_searched_at(self, value: date) -> None:
+        async with self._session_factory() as session:
+            await session.exec(update(SearchState).values(last_searched_at=value))
+            await session.commit()

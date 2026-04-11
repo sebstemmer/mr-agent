@@ -1,6 +1,6 @@
 import logging
 
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from utils.common.src.datetime_utils import utc_now
 from utils.patcher.src.patch import Patch
@@ -11,12 +11,12 @@ from utils.patcher.src.version_repository import VersionRepository
 class Patcher:
     def __init__(
         self,
-        session: AsyncSession,
+        session_factory: async_sessionmaker,
         version_repo: VersionRepository,
         patches: list[Patch],
         logger: logging.Logger,
     ):
-        self._session = session
+        self._session_factory = session_factory
         self._version_repo = version_repo
         self._patches = sorted(patches, key=lambda p: p.version)
         self._logger = logger
@@ -34,7 +34,8 @@ class Patcher:
 
         for patch in pending:
             self._logger.info(f"applying patch {patch.version}")
-            await patch.apply(session=self._session)
+            async with self._session_factory() as session:
+                await patch.apply(session=session)
             if version is None:
                 version = Version(version=patch.version, applied_at=utc_now())
             else:

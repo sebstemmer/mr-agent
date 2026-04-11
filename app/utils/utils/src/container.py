@@ -1,4 +1,5 @@
 from dependency_injector import containers, providers
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from utils.common.src.config import settings
@@ -20,9 +21,16 @@ class UtilsContainer(containers.DeclarativeContainer):
         host=settings.POSTGRES_HOST,
         db=settings.POSTGRES_DB,
     )
-    session = providers.Singleton(AsyncSession, bind=engine)
+    session_factory = providers.Singleton(
+        async_sessionmaker,
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
     router = providers.Singleton(create_router)
     health_controller = providers.Singleton(
         HealthController, engine=engine, router=router
     )
-    patcher_container = providers.Container(PatcherContainer, session=session)
+    patcher_container = providers.Container(
+        PatcherContainer, session_factory=session_factory
+    )

@@ -88,7 +88,7 @@ class RefreshJobs:
         for job in jobs:
             await self._process_job(job=job)
 
-        await self._state_repo.update_last_searched_at(state=state, value=date.today())
+        await self._state_repo.set_last_searched_at(value=date.today())
 
     async def _process_job(self, job: dict) -> None:
         job_id = job.get("job_id")

@@ -11,4 +11,4 @@ def create_engine(user: str, password: str, host: str, db: str) -> AsyncEngine:
         port=5432,
         database=db,
     )
-    return create_async_engine(url)
+    return create_async_engine(url, pool_pre_ping=True, pool_recycle=1800)
