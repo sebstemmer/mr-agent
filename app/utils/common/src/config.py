@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_DB: str
     LOG_LEVEL: str
+    MICROSOFT_CLIENT_ID: str
+    MICROSOFT_CLIENT_SECRET: str
+    MICROSOFT_REFRESH_TOKEN: str
+    MICROSOFT_TODO_LIST_ID: str
 
     class Config:
         env_file = ".env"

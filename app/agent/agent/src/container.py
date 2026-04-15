@@ -2,6 +2,7 @@ import logging
 
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
+from microsoft_todo.src.container import MicrosoftTodoContainer
 from utils.common.src.config import settings
 from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
 from weather.src.container import WeatherContainer
@@ -9,6 +10,7 @@ from weather.src.container import WeatherContainer
 from agent.agent.src.agent import create_agent
 from agent.agent.src.classify_intent_node import ClassifyIntentNode
 from agent.job_search.src.container import JobSearchAgentContainer
+from agent.microsoft_todo.src.container import TodoAgentContainer
 from agent.weather.src.container import WeatherAgentContainer
 
 SYSTEM_PROMPT = (
@@ -20,6 +22,7 @@ SYSTEM_PROMPT = (
 class AgentContainer(containers.DeclarativeContainer):
     weather_container: WeatherContainer = providers.DependenciesContainer()
     job_search_container: JobSearchContainer = providers.DependenciesContainer()
+    microsoft_todo_container: MicrosoftTodoContainer = providers.DependenciesContainer()
 
     weather_agent_container = providers.Container(
         WeatherAgentContainer,
@@ -33,6 +36,12 @@ class AgentContainer(containers.DeclarativeContainer):
         system_prompt=SYSTEM_PROMPT,
     )
 
+    todo_agent_container = providers.Container(
+        TodoAgentContainer,
+        microsoft_todo_container=microsoft_todo_container,
+        system_prompt=SYSTEM_PROMPT,
+    )
+
     classify_intent_node = providers.Singleton(
         ClassifyIntentNode,
         api_key=settings.OPENAI_API_KEY,
@@ -40,6 +49,7 @@ class AgentContainer(containers.DeclarativeContainer):
         system_prompt=SYSTEM_PROMPT,
         handle_weather_tool=weather_agent_container.handle_weather_tool,
         handle_job_search_tool=job_search_agent_container.handle_job_search_tool,
+        handle_todo_tool=todo_agent_container.handle_todo_tool,
         logger=providers.Singleton(logging.getLogger, "agent"),
     )
 
@@ -48,4 +58,5 @@ class AgentContainer(containers.DeclarativeContainer):
         classify_intent_node=classify_intent_node,
         handle_weather_node=weather_agent_container.handle_weather_node,
         handle_job_search_node=job_search_agent_container.handle_job_search_node,
+        handle_todo_node=todo_agent_container.handle_todo_node,
     )
