@@ -1,7 +1,7 @@
 from logging import Logger
 from typing import Type
 
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
 from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
@@ -9,6 +9,7 @@ from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.common.src.unknown_tool_called import UnknownToolCalled
 
 from agent.microsoft_todo.src.create_task_tool import CreateTaskTool
+from agent.microsoft_todo.src.get_tasks_tool import GetTasksTool
 
 TODO_BRANCH = "todo"
 _LEAVE_TODO_BRANCH_TOOL_NAME = "leave_todo_branch"
@@ -39,9 +40,11 @@ class HandleTodoNode:
         model: str,
         system_prompt: str,
         create_task_tool: CreateTaskTool,
+        get_tasks_tool: GetTasksTool,
         logger: Logger,
     ):
         self._create_task_tool = create_task_tool
+        self._get_tasks_tool = get_tasks_tool
         self._logger = logger
         self._llm = LlmWithSystemPrompt(
             api_key=api_key,
@@ -49,6 +52,7 @@ class HandleTodoNode:
             system_prompt=system_prompt,
             tools=[
                 create_task_tool,
+                get_tasks_tool,
                 _LeaveTodoBranchTool(),
             ],
             tool_choice="auto",
@@ -73,11 +77,27 @@ class HandleTodoNode:
         if tool_name == _LEAVE_TODO_BRANCH_TOOL_NAME:
             return {"current_branch": None}
 
-        if tool_name == self._create_task_tool.name:
-            result = await self._create_task_tool.ainvoke(input=tool_call["args"])
-            return {
-                "messages": [AIMessage(content=result)],
-                "current_branch": TODO_BRANCH,
-            }
+        tool = self._resolve_tool(tool_name=tool_name)
+        result = await tool.arun(
+            tool_input=tool_call["args"], tool_call_id=tool_call["id"]
+        )
+        response_messages: list[BaseMessage] = [
+            response,
+            result,
+            AIMessage(content=result.artifact),
+        ]
 
-        raise UnknownToolCalled(tool_name=tool_name)
+        return {
+            "messages": response_messages,
+            "current_branch": TODO_BRANCH,
+        }
+
+    def _resolve_tool(self, tool_name: str) -> BaseTool:
+        tools = {
+            self._create_task_tool.name: self._create_task_tool,
+            self._get_tasks_tool.name: self._get_tasks_tool,
+        }
+        tool = tools.get(tool_name)
+        if tool is None:
+            raise UnknownToolCalled(tool_name=tool_name)
+        return tool

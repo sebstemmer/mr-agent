@@ -5,16 +5,6 @@ from sqlalchemy import text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from utils.patcher.src.patch import Patch
 
-_PUBLIC_ID_ALPHABET = string.ascii_lowercase + string.digits
-_PUBLIC_ID_LENGTH = 5
-
-
-def _generate_public_id() -> str:
-    return "".join(
-        secrets.choice(_PUBLIC_ID_ALPHABET) for _ in range(_PUBLIC_ID_LENGTH)
-    )
-
-
 class AddPublicIdToJob(Patch):
     version = 0
 
@@ -31,7 +21,7 @@ class AddPublicIdToJob(Patch):
         used: set[str] = set()
         for job_id in job_ids:
             while True:
-                public_id = _generate_public_id()
+                public_id = self._generate_public_id()
                 if public_id not in used:
                     used.add(public_id)
                     break
@@ -50,3 +40,8 @@ class AddPublicIdToJob(Patch):
             )
         )
         await session.commit()
+
+    @staticmethod
+    def _generate_public_id() -> str:
+        alphabet = string.ascii_lowercase + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(5))

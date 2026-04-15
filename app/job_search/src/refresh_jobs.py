@@ -15,16 +15,6 @@ from job_search.src.job_model import Job
 from job_search.src.job_repository import JobRepository
 from job_search.src.job_search_state_repository import JobSearchStateRepository
 
-_PUBLIC_ID_ALPHABET = string.ascii_lowercase + string.digits
-_PUBLIC_ID_LENGTH = 5
-
-
-def _generate_public_id() -> str:
-    return "".join(
-        secrets.choice(_PUBLIC_ID_ALPHABET) for _ in range(_PUBLIC_ID_LENGTH)
-    )
-
-
 _evaluation_llm = ChatOpenAI(
     api_key=settings.OPENAI_API_KEY, model=CHAT_GPT_5_4_MINI_MODEL
 )
@@ -112,7 +102,7 @@ class RefreshJobs:
         link = await self._resolve_link(job=job)
 
         db_job = Job(
-            public_id=_generate_public_id(),
+            public_id=self._generate_public_id(),
             job_id=job_id,
             of_interest=interesting,
             link=link,
@@ -154,6 +144,11 @@ class RefreshJobs:
             return response.status_code < 400
         except httpx.HTTPError:
             return False
+
+    @staticmethod
+    def _generate_public_id() -> str:
+        alphabet = string.ascii_lowercase + string.digits
+        return "".join(secrets.choice(alphabet) for _ in range(5))
 
     async def _resolve_link(self, job: dict) -> str | None:
         apply_link = job.get("job_apply_link")

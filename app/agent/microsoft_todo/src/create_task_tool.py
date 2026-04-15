@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Type
 
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool
 from microsoft_todo.src.microsoft_todo_client import MicrosoftTodoClient
 from pydantic import BaseModel, Field
@@ -62,6 +63,7 @@ class CreateTaskTool(BaseTool):
     name: str = "create_task"
     description: str = "Creates a new task in the user's personal todo list."
     args_schema: Type[BaseModel] = CreateTaskInput
+    response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
 
     class Config:
@@ -72,7 +74,7 @@ class CreateTaskTool(BaseTool):
         title: str,
         due_datetime: str | None = None,
         recurrence: _Recurrence | None = None,
-    ) -> str:
+    ) -> tuple[str, list[ToolMessage]]:
         parsed_dt = datetime.fromisoformat(due_datetime) if due_datetime else None
         parsed_recurrence = self._build_recurrence(recurrence=recurrence) if recurrence else None
         await self.todo_client.save(
@@ -80,7 +82,7 @@ class CreateTaskTool(BaseTool):
             due_datetime=parsed_dt,
             recurrence=parsed_recurrence,
         )
-        return f"Created task: {title}"
+        return f"Created task: {title}", []
 
     def _run(self, title: str, **_kwargs) -> str:
         raise SyncRunNotImplemented()

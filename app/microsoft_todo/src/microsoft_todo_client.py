@@ -1,20 +1,20 @@
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 import httpx
 
-_TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
-_GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
-
-
-@dataclass
-class _CachedToken:
-    access_token: str = ""
-    expires_at: float = 0.0
-
 
 class MicrosoftTodoClient:
+    _ONE_DAY = timedelta(days=1)
+    _TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+    _GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
+
+    @dataclass
+    class _CachedToken:
+        access_token: str = ""
+        expires_at: float = 0.0
+
     def __init__(
         self,
         client: httpx.AsyncClient,
@@ -28,12 +28,21 @@ class MicrosoftTodoClient:
         self._client_secret = client_secret
         self._refresh_token = refresh_token
         self._list_id = list_id
-        self._token: _CachedToken = _CachedToken()
+        self._token = self._CachedToken()
 
-    async def find_by_status(self, status: str) -> list[dict]:
+    async def find_by_status_and_due_date_between_inclusive(
+        self, status: str, due_from: date | None, due_to: date | None
+    ) -> list[dict]:
+        filters = [f"status eq '{status}'"]
+        if due_from is not None:
+            filters.append(f"dueDateTime/dateTime ge '{due_from.isoformat()}'")
+        if due_to is not None:
+            filters.append(
+                f"dueDateTime/dateTime lt '{(due_to + self._ONE_DAY).isoformat()}'"
+            )
         response = await self._get(
             path=f"/me/todo/lists/{self._list_id}/tasks",
-            params={"$filter": f"status eq '{status}'"},
+            params={"$filter": " and ".join(filters)},
         )
         return response["value"]
 
@@ -65,7 +74,7 @@ class MicrosoftTodoClient:
     async def _get(self, path: str, params: dict | None = None) -> dict:
         headers = await self._auth_headers()
         response = await self._client.get(
-            url=f"{_GRAPH_BASE_URL}{path}", headers=headers, params=params
+            url=f"{self._GRAPH_BASE_URL}{path}", headers=headers, params=params
         )
         response.raise_for_status()
         return response.json()
@@ -73,7 +82,7 @@ class MicrosoftTodoClient:
     async def _post(self, path: str, json: dict) -> dict:
         headers = await self._auth_headers()
         response = await self._client.post(
-            url=f"{_GRAPH_BASE_URL}{path}", headers=headers, json=json
+            url=f"{self._GRAPH_BASE_URL}{path}", headers=headers, json=json
         )
         response.raise_for_status()
         return response.json()
@@ -81,7 +90,7 @@ class MicrosoftTodoClient:
     async def _patch(self, path: str, json: dict) -> dict:
         headers = await self._auth_headers()
         response = await self._client.patch(
-            url=f"{_GRAPH_BASE_URL}{path}", headers=headers, json=json
+            url=f"{self._GRAPH_BASE_URL}{path}", headers=headers, json=json
         )
         response.raise_for_status()
         return response.json()
@@ -93,7 +102,7 @@ class MicrosoftTodoClient:
 
     async def _refresh_access_token(self) -> None:
         response = await self._client.post(
-            url=_TOKEN_URL,
+            url=self._TOKEN_URL,
             data={
                 "client_id": self._client_id,
                 "client_secret": self._client_secret,
@@ -104,7 +113,7 @@ class MicrosoftTodoClient:
         )
         response.raise_for_status()
         data = response.json()
-        self._token = _CachedToken(
+        self._token = self._CachedToken(
             access_token=data["access_token"],
             expires_at=time.time() + data["expires_in"] - 60,
         )
