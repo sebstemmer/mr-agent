@@ -39,5 +39,7 @@ class Container(containers.DeclarativeContainer):
     morning_briefing = providers.Container(
         MorningBriefingContainer,
         job_search_container=job_search_container,
+        weather_container=weather_container,
+        microsoft_todo_container=microsoft_todo_container,
         telegram_channel_container=channels_container.telegram_channel_container,
     )

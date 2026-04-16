@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_SECRET: str
     MICROSOFT_REFRESH_TOKEN: str
     MICROSOFT_TODO_LIST_ID: str
+    MORNING_BRIEFING_GREETING: str
+    MORNING_BRIEFING_WEATHER_LOCATION: str
 
     class Config:
         env_file = ".env"

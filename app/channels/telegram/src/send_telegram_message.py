@@ -22,4 +22,5 @@ class SendTelegramMessage:
             await self._bot.app.bot.send_message(
                 chat_id=chat.chat_id,
                 text=part,
+                parse_mode="Markdown",
             )
