@@ -1,8 +1,12 @@
+import logging
 import time
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 import httpx
+from utils.common.src.update_field import Update, UpdateField
+
+from microsoft_todo.src.task_status import TaskStatus
 
 
 class MicrosoftTodoClient:
@@ -22,25 +26,28 @@ class MicrosoftTodoClient:
         client_secret: str,
         refresh_token: str,
         list_id: str,
+        logger: logging.Logger,
     ):
         self._client = client
         self._client_id = client_id
         self._client_secret = client_secret
         self._refresh_token = refresh_token
         self._list_id = list_id
+        self._logger = logger
         self._token = self._CachedToken()
 
     async def find_by_status_and_due_date_between_inclusive(
-        self, status: str, due_from: date | None, due_to: date | None
+        self, status: TaskStatus, due_from: date | None, due_to: date | None
     ) -> list[dict]:
-        filters = [f"status eq '{status}'"]
+        filters = [f"status eq '{status.value}'"]
         if due_from is not None:
             filters.append(f"dueDateTime/dateTime ge '{due_from.isoformat()}'")
         if due_to is not None:
             filters.append(
                 f"dueDateTime/dateTime lt '{(due_to + self._ONE_DAY).isoformat()}'"
             )
-        response = await self._get(
+        response = await self._request(
+            method="GET",
             path=f"/me/todo/lists/{self._list_id}/tasks",
             params={"$filter": " and ".join(filters)},
         )
@@ -49,50 +56,76 @@ class MicrosoftTodoClient:
     async def save(
         self,
         title: str,
-        due_datetime: datetime | None,
+        due_date: date | None,
         recurrence: dict | None,
     ) -> dict:
         body: dict = {"title": title}
-        if due_datetime is not None:
+        if due_date is not None:
             body["dueDateTime"] = {
-                "dateTime": due_datetime.isoformat(),
+                "dateTime": due_date.isoformat(),
                 "timeZone": "UTC",
             }
         if recurrence is not None:
             body["recurrence"] = recurrence
-        return await self._post(
+        return await self._request(
+            method="POST",
             path=f"/me/todo/lists/{self._list_id}/tasks",
             json=body,
         )
 
-    async def update_status_to_completed_by_id(self, task_id: str) -> dict:
-        return await self._patch(
+    async def update_by_id(
+        self,
+        task_id: str,
+        title: UpdateField[str],
+        due_date: UpdateField[date | None],
+        status: UpdateField[TaskStatus],
+    ) -> dict:
+        body: dict = {}
+        if isinstance(title, Update):
+            body["title"] = title.value
+        if isinstance(due_date, Update):
+            body["dueDateTime"] = (
+                {"dateTime": due_date.value.isoformat(), "timeZone": "UTC"}
+                if due_date.value is not None
+                else None
+            )
+        if isinstance(status, Update):
+            body["status"] = status.value.value
+        return await self._request(
+            method="PATCH",
             path=f"/me/todo/lists/{self._list_id}/tasks/{task_id}",
-            json={"status": "completed"},
+            json=body,
         )
 
-    async def _get(self, path: str, params: dict | None = None) -> dict:
-        headers = await self._auth_headers()
-        response = await self._client.get(
-            url=f"{self._GRAPH_BASE_URL}{path}", headers=headers, params=params
+    async def delete_by_id(self, task_id: str) -> None:
+        await self._request(
+            method="DELETE",
+            path=f"/me/todo/lists/{self._list_id}/tasks/{task_id}",
         )
-        response.raise_for_status()
-        return response.json()
 
-    async def _post(self, path: str, json: dict) -> dict:
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        params: dict | None = None,
+        json: dict | None = None,
+    ) -> dict | None:
         headers = await self._auth_headers()
-        response = await self._client.post(
-            url=f"{self._GRAPH_BASE_URL}{path}", headers=headers, json=json
+        url = f"{self._GRAPH_BASE_URL}{path}"
+        self._logger.debug("%s %s params=%s body=%s", method, path, params, json)
+        response = await self._client.request(
+            method=method, url=url, headers=headers, params=params, json=json
+        )
+        self._logger.debug(
+            "%s %s status=%s response=%s",
+            method,
+            path,
+            response.status_code,
+            response.text,
         )
         response.raise_for_status()
-        return response.json()
-
-    async def _patch(self, path: str, json: dict) -> dict:
-        headers = await self._auth_headers()
-        response = await self._client.patch(
-            url=f"{self._GRAPH_BASE_URL}{path}", headers=headers, json=json
-        )
-        response.raise_for_status()
+        if response.status_code == 204:
+            return None
         return response.json()
 
     async def _auth_headers(self) -> dict[str, str]:

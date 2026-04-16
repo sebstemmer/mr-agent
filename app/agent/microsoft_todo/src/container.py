@@ -5,10 +5,13 @@ from microsoft_todo.src.container import MicrosoftTodoContainer
 from utils.common.src.config import settings
 from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
 
+from agent.microsoft_todo.src.complete_task_tool import CompleteTaskTool
 from agent.microsoft_todo.src.create_task_tool import CreateTaskTool
+from agent.microsoft_todo.src.delete_task_tool import DeleteTaskTool
 from agent.microsoft_todo.src.get_tasks_tool import GetTasksTool
 from agent.microsoft_todo.src.handle_todo_node import HandleTodoNode
 from agent.microsoft_todo.src.handle_todo_tool import HandleTodoTool
+from agent.microsoft_todo.src.update_task_tool import UpdateTaskTool
 
 
 class TodoAgentContainer(containers.DeclarativeContainer):
@@ -24,6 +27,18 @@ class TodoAgentContainer(containers.DeclarativeContainer):
         GetTasksTool,
         todo_client=microsoft_todo_container.microsoft_todo_client,
     )
+    update_task_tool = providers.Singleton(
+        UpdateTaskTool,
+        todo_client=microsoft_todo_container.microsoft_todo_client,
+    )
+    complete_task_tool = providers.Singleton(
+        CompleteTaskTool,
+        todo_client=microsoft_todo_container.microsoft_todo_client,
+    )
+    delete_task_tool = providers.Singleton(
+        DeleteTaskTool,
+        todo_client=microsoft_todo_container.microsoft_todo_client,
+    )
     handle_todo_tool = providers.Singleton(HandleTodoTool)
     handle_todo_node = providers.Singleton(
         HandleTodoNode,
@@ -32,5 +47,8 @@ class TodoAgentContainer(containers.DeclarativeContainer):
         system_prompt=system_prompt,
         create_task_tool=create_task_tool,
         get_tasks_tool=get_tasks_tool,
+        update_task_tool=update_task_tool,
+        complete_task_tool=complete_task_tool,
+        delete_task_tool=delete_task_tool,
         logger=providers.Singleton(logging.getLogger, "todo"),
     )

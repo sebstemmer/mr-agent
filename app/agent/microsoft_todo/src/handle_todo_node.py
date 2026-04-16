@@ -8,8 +8,11 @@ from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.common.src.unknown_tool_called import UnknownToolCalled
 
+from agent.microsoft_todo.src.complete_task_tool import CompleteTaskTool
 from agent.microsoft_todo.src.create_task_tool import CreateTaskTool
+from agent.microsoft_todo.src.delete_task_tool import DeleteTaskTool
 from agent.microsoft_todo.src.get_tasks_tool import GetTasksTool
+from agent.microsoft_todo.src.update_task_tool import UpdateTaskTool
 
 TODO_BRANCH = "todo"
 _LEAVE_TODO_BRANCH_TOOL_NAME = "leave_todo_branch"
@@ -41,10 +44,16 @@ class HandleTodoNode:
         system_prompt: str,
         create_task_tool: CreateTaskTool,
         get_tasks_tool: GetTasksTool,
+        update_task_tool: UpdateTaskTool,
+        complete_task_tool: CompleteTaskTool,
+        delete_task_tool: DeleteTaskTool,
         logger: Logger,
     ):
         self._create_task_tool = create_task_tool
         self._get_tasks_tool = get_tasks_tool
+        self._update_task_tool = update_task_tool
+        self._complete_task_tool = complete_task_tool
+        self._delete_task_tool = delete_task_tool
         self._logger = logger
         self._llm = LlmWithSystemPrompt(
             api_key=api_key,
@@ -53,6 +62,9 @@ class HandleTodoNode:
             tools=[
                 create_task_tool,
                 get_tasks_tool,
+                update_task_tool,
+                complete_task_tool,
+                delete_task_tool,
                 _LeaveTodoBranchTool(),
             ],
             tool_choice="auto",
@@ -69,22 +81,25 @@ class HandleTodoNode:
                 "current_branch": TODO_BRANCH,
             }
 
-        # noinspection PyTypeChecker
-        tool_call = response.tool_calls[0]
-        tool_name = tool_call["name"]
-        self._logger.info("[branch=%s] tool=%s", TODO_BRANCH, tool_name)
-
-        if tool_name == _LEAVE_TODO_BRANCH_TOOL_NAME:
+        if any(tc["name"] == _LEAVE_TODO_BRANCH_TOOL_NAME for tc in response.tool_calls):
+            self._logger.info("[branch=%s] tool=%s", TODO_BRANCH, _LEAVE_TODO_BRANCH_TOOL_NAME)
             return {"current_branch": None}
 
-        tool = self._resolve_tool(tool_name=tool_name)
-        result = await tool.arun(
-            tool_input=tool_call["args"], tool_call_id=tool_call["id"]
-        )
+        tool_results: list[ToolMessage] = []
+        for tool_call in response.tool_calls:
+            tool_name = tool_call["name"]
+            self._logger.info("[branch=%s] tool=%s", TODO_BRANCH, tool_name)
+            tool = self._resolve_tool(tool_name=tool_name)
+            result = await tool.arun(
+                tool_input=tool_call["args"], tool_call_id=tool_call["id"]
+            )
+            tool_results.append(result)
+
+        artifact = "\n\n".join(result.artifact for result in tool_results)
         response_messages: list[BaseMessage] = [
             response,
-            result,
-            AIMessage(content=result.artifact),
+            *tool_results,
+            AIMessage(content=artifact),
         ]
 
         return {
@@ -96,6 +111,9 @@ class HandleTodoNode:
         tools = {
             self._create_task_tool.name: self._create_task_tool,
             self._get_tasks_tool.name: self._get_tasks_tool,
+            self._update_task_tool.name: self._update_task_tool,
+            self._complete_task_tool.name: self._complete_task_tool,
+            self._delete_task_tool.name: self._delete_task_tool,
         }
         tool = tools.get(tool_name)
         if tool is None:

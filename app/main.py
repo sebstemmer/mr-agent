@@ -2,6 +2,10 @@ import logging
 from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from apscheduler.triggers.cron import CronTrigger
 from container import Container
 from fastapi import FastAPI
@@ -9,8 +13,8 @@ from sqlmodel import SQLModel
 from utils.common.src.config import settings
 
 logging.basicConfig(level=settings.LOG_LEVEL, force=True)
-logging.getLogger("agent").setLevel(settings.LOG_LEVEL)
-logging.getLogger("weather").setLevel(settings.LOG_LEVEL)
+# logging.getLogger("agent").setLevel(settings.LOG_LEVEL)
+# logging.getLogger("weather").setLevel(settings.LOG_LEVEL)
 
 container: Container = Container()
 

@@ -1,16 +1,23 @@
 import json
-from datetime import date, datetime
+from datetime import date
 from typing import Type
 
 from langchain_core.tools import BaseTool
 from microsoft_todo.src.microsoft_todo_client import MicrosoftTodoClient
+from microsoft_todo.src.task_status import TaskStatus
 from pydantic import BaseModel, Field
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
+
+from agent.microsoft_todo.src.format_task import format_task
 
 
 class _GetTasksInput(BaseModel):
     status: str = Field(
-        description="Task status to filter by: 'notStarted' (open tasks) or 'completed' (done).",
+        default=TaskStatus.NOT_STARTED,
+        description=(
+            f"Task status to filter by: "
+            f"'{TaskStatus.NOT_STARTED}' (open tasks) or '{TaskStatus.COMPLETED}' (done). "
+        ),
     )
     due_from: str | None = Field(
         default=None,
@@ -48,7 +55,7 @@ class GetTasksTool(BaseTool):
         parsed_from = date.fromisoformat(due_from) if due_from else None
         parsed_to = date.fromisoformat(due_to) if due_to else None
         tasks = await self.todo_client.find_by_status_and_due_date_between_inclusive(
-            status=status,
+            status=TaskStatus(status),
             due_from=parsed_from,
             due_to=parsed_to,
         )
@@ -75,20 +82,5 @@ class GetTasksTool(BaseTool):
     def _format_tasks(tasks: list[dict]) -> str:
         lines = []
         for index, task in enumerate(tasks, start=1):
-            due_raw = task.get("dueDateTime", {}).get("dateTime")
-            if due_raw:
-                parsed_due = datetime.fromisoformat(due_raw)
-                fmt = (
-                    "%Y-%m-%d %H:%M"
-                    if parsed_due.hour or parsed_due.minute
-                    else "%Y-%m-%d"
-                )
-                due_str = f" - due: {parsed_due.strftime(fmt)}"
-            else:
-                due_str = ""
-            recurrence = task.get("recurrence")
-            recurrence_str = (
-                f" (recurring: {recurrence['pattern']['type']})" if recurrence else ""
-            )
-            lines.append(f"{index}. {task['title']}{due_str}{recurrence_str}")
+            lines.append(f"{index}. {format_task(task=task)}")
         return "\n".join(lines)

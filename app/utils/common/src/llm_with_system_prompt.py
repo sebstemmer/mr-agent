@@ -1,8 +1,8 @@
-from datetime import date
-
 from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
+
+from utils.common.src.datetime_utils import today_berlin
 
 
 class LlmWithSystemPrompt:
@@ -20,6 +20,6 @@ class LlmWithSystemPrompt:
         self._bound_llm = llm.bind_tools(tools, tool_choice=tool_choice)
 
     async def ainvoke(self, messages: list[BaseMessage]) -> AIMessage:
-        today = date.today().isoformat()
+        today = today_berlin().isoformat()
         system_message = SystemMessage(content=self._system_prompt.format(today=today))
         return await self._bound_llm.ainvoke([system_message] + messages)

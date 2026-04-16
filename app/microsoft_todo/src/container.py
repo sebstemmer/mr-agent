@@ -1,3 +1,5 @@
+import logging
+
 from dependency_injector import containers, providers
 from utils.common.src.config import settings
 from utils.utils.src.container import UtilsContainer
@@ -15,4 +17,5 @@ class MicrosoftTodoContainer(containers.DeclarativeContainer):
         client_secret=settings.MICROSOFT_CLIENT_SECRET,
         refresh_token=settings.MICROSOFT_REFRESH_TOKEN,
         list_id=settings.MICROSOFT_TODO_LIST_ID,
+        logger=providers.Singleton(logging.getLogger, "microsoft_todo"),
     )
