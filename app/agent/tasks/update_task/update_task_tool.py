@@ -7,10 +7,12 @@ from pydantic import BaseModel, Field
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.common.src.update_field import StaysTheSame, Update
 
-from agent.microsoft_todo.src.format_task import format_task
+from agent.tasks.format_task import format_task
+
+_TOOL_NAME = "update_task"
 
 
-class _UpdateTaskInput(BaseModel):
+class UpdateTaskInput(BaseModel):
     task_id: str = Field(description="The task ID from a previous get_tasks result.")
     title: str | None = Field(
         default=None,
@@ -27,13 +29,13 @@ class _UpdateTaskInput(BaseModel):
 
 
 class UpdateTaskTool(BaseTool):
-    name: str = "update_task"
+    name: str = _TOOL_NAME
     description: str = (
         "Updates an existing task in the user's personal todo list. "
         "Can change title or due date. "
         "Use the task ID from a previous get_tasks result."
     )
-    args_schema: Type[BaseModel] = _UpdateTaskInput
+    args_schema: Type[BaseModel] = UpdateTaskInput
     response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
 
@@ -51,8 +53,10 @@ class UpdateTaskTool(BaseTool):
             task_id=task_id,
             title=Update(value=title) if title is not None else StaysTheSame(),
             due_date=(
-                Update(value=None) if remove_due_date
-                else Update(value=date.fromisoformat(due_date)) if due_date is not None
+                Update(value=None)
+                if remove_due_date
+                else Update(value=date.fromisoformat(due_date))
+                if due_date is not None
                 else StaysTheSame()
             ),
             status=StaysTheSame(),

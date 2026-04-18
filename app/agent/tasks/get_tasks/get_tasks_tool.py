@@ -8,10 +8,12 @@ from microsoft_todo.src.task_status import TaskStatus
 from pydantic import BaseModel, Field
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
-from agent.microsoft_todo.src.format_task import format_task
+from agent.tasks.format_task import format_task
+
+_TOOL_NAME = "get_tasks"
 
 
-class _GetTasksInput(BaseModel):
+class GetTasksInput(BaseModel):
     status: str = Field(
         default=TaskStatus.NOT_STARTED,
         description=(
@@ -37,9 +39,9 @@ class _GetTasksInput(BaseModel):
 
 
 class GetTasksTool(BaseTool):
-    name: str = "get_tasks"
+    name: str = _TOOL_NAME
     description: str = "Gets tasks from the user's personal todo list. Can filter by status and due date range."
-    args_schema: Type[BaseModel] = _GetTasksInput
+    args_schema: Type[BaseModel] = GetTasksInput
     response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
 

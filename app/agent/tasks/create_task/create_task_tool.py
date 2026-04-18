@@ -4,16 +4,19 @@ from typing import Type
 from langchain_core.tools import BaseTool
 from microsoft_todo.src.microsoft_todo_client import MicrosoftTodoClient
 from pydantic import BaseModel, Field
+from utils.common.src.datetime_utils import today_berlin
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
-from agent.microsoft_todo.src.recurrence import Recurrence, build_recurrence
+from agent.tasks.recurrence import Recurrence, build_recurrence
+
+_TOOL_NAME = "create_task"
 
 
-class _CreateTaskInput(BaseModel):
+class CreateTaskInput(BaseModel):
     title: str = Field(description="The title of the task to create.")
     due_date: str | None = Field(
         default=None,
-        description="Optional due date in YYYY-MM-DD format (e.g. 2026-04-15).",
+        description="Due date in YYYY-MM-DD format (e.g. 2026-04-15). Required when recurrence is set.",
     )
     recurrence: Recurrence | None = Field(
         default=None,
@@ -29,9 +32,9 @@ class _CreateTaskInput(BaseModel):
 
 
 class CreateTaskTool(BaseTool):
-    name: str = "create_task"
+    name: str = _TOOL_NAME
     description: str = "Creates a new task in the user's personal todo list."
-    args_schema: Type[BaseModel] = _CreateTaskInput
+    args_schema: Type[BaseModel] = CreateTaskInput
     response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
 
@@ -44,6 +47,8 @@ class CreateTaskTool(BaseTool):
         due_date: str | None = None,
         recurrence: Recurrence | None = None,
     ) -> tuple[str, str]:
+        if recurrence and not due_date:
+            due_date = today_berlin().isoformat()
         parsed_date = date.fromisoformat(due_date) if due_date else None
         parsed_recurrence = (
             build_recurrence(recurrence=recurrence) if recurrence else None

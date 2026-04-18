@@ -60,13 +60,15 @@ class MicrosoftTodoClient:
         recurrence: dict | None,
     ) -> dict:
         body: dict = {"title": title}
+        if recurrence is not None:
+            body["recurrence"] = recurrence
+            if due_date is None:
+                due_date = date.fromisoformat(recurrence["range"]["startDate"])
         if due_date is not None:
             body["dueDateTime"] = {
                 "dateTime": due_date.isoformat(),
                 "timeZone": "UTC",
             }
-        if recurrence is not None:
-            body["recurrence"] = recurrence
         return await self._request(
             method="POST",
             path=f"/me/todo/lists/{self._list_id}/tasks",

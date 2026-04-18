@@ -2,8 +2,8 @@ from typing import Type
 
 from job_search.src.like_job import LikeJob
 from langchain_core.tools import BaseTool
-from langgraph.types import interrupt
 from pydantic import BaseModel, Field
+from utils.common.src.confirm import confirm
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
 
@@ -25,11 +25,7 @@ class LikeJobTool(BaseTool):
         arbitrary_types_allowed = True
 
     async def _arun(self, public_id: str) -> str:
-        answer = interrupt(
-            {"question": f"Do you want to like job posting with id {public_id}?"}
-        )
-
-        if str(answer).strip().lower() not in ("yes", "y"):
+        if not confirm(question=f"Do you want to like job posting with id {public_id}?"):
             return f"Skipped liking job {public_id}."
 
         await self.like_job.like(public_id=public_id)

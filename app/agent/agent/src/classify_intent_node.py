@@ -5,15 +5,15 @@ from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
 
 from agent.job_search.src.handle_job_search_node import JOB_SEARCH_BRANCH
 from agent.job_search.src.handle_job_search_tool import HandleJobSearchTool
-from agent.microsoft_todo.src.handle_todo_node import TODO_BRANCH
-from agent.microsoft_todo.src.handle_todo_tool import HandleTodoTool
+from agent.tasks.create_tasks_subgraph import TASKS_BRANCH
+from agent.tasks.handle_tasks_tool import HandleTasksTool
 from agent.weather.src.handle_weather_node import WEATHER_BRANCH
 from agent.weather.src.handle_weather_tool import HandleWeatherTool
 
 _TOOL_NAME_TO_BRANCH: dict[str, str] = {
     "handle_weather": WEATHER_BRANCH,
     "handle_job_search": JOB_SEARCH_BRANCH,
-    "handle_todo": TODO_BRANCH,
+    "handle_tasks": TASKS_BRANCH,
 }
 
 
@@ -25,7 +25,7 @@ class ClassifyIntentNode:
         system_prompt: str,
         handle_weather_tool: HandleWeatherTool,
         handle_job_search_tool: HandleJobSearchTool,
-        handle_todo_tool: HandleTodoTool,
+        handle_tasks_tool: HandleTasksTool,
         logger: Logger,
     ):
         self._logger = logger
@@ -33,7 +33,7 @@ class ClassifyIntentNode:
             api_key=api_key,
             model=model,
             system_prompt=system_prompt,
-            tools=[handle_weather_tool, handle_job_search_tool, handle_todo_tool],
+            tools=[handle_weather_tool, handle_job_search_tool, handle_tasks_tool],
             tool_choice="auto",
         )
 

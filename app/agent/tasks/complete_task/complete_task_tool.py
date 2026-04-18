@@ -7,27 +7,30 @@ from pydantic import BaseModel, Field
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.common.src.update_field import StaysTheSame, Update
 
-from agent.microsoft_todo.src.format_task import format_task
+from agent.tasks.format_task import format_task
+
+_TOOL_NAME = "complete_task"
 
 
-class _CompleteTaskInput(BaseModel):
+class CompleteTaskInput(BaseModel):
     task_id: str = Field(description="The task ID from a previous get_tasks result.")
+    title: str = Field(description="The title of the task to complete.")
 
 
 class CompleteTaskTool(BaseTool):
-    name: str = "complete_task"
+    name: str = _TOOL_NAME
     description: str = (
         "Marks a task as completed in the user's personal todo list. "
         "Use the task ID from a previous get_tasks result."
     )
-    args_schema: Type[BaseModel] = _CompleteTaskInput
+    args_schema: Type[BaseModel] = CompleteTaskInput
     response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
 
     class Config:
         arbitrary_types_allowed = True
 
-    async def _arun(self, task_id: str) -> tuple[str, str]:
+    async def _arun(self, task_id: str, title: str) -> tuple[str, str]:
         task = await self.todo_client.update_by_id(
             task_id=task_id,
             title=StaysTheSame(),
