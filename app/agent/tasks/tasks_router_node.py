@@ -1,24 +1,34 @@
 from logging import Logger
 
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
+from langchain_core.messages.tool import ToolCall
 from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
 
+from agent.tasks.chat_about_tasks.chat_about_tasks_tool import (
+    _TOOL_NAME as _CHAT_ABOUT_TASKS,
+)
+from agent.tasks.chat_about_tasks.chat_about_tasks_tool import (
+    ChatAboutTasksTool,
+)
 from agent.tasks.complete_task.complete_task_tool import CompleteTaskTool
 from agent.tasks.create_task.create_task_tool import CreateTaskTool
 from agent.tasks.delete_task.delete_task_tool import DeleteTaskTool
 from agent.tasks.get_tasks.get_tasks_tool import GetTasksTool
-from agent.tasks.leave_tasks.leave_tasks_tool import LeaveTasksTool
+from agent.tasks.leave_tasks.leave_tasks_tool import (
+    _TOOL_NAME as _LEAVE_TASKS,
+)
+from agent.tasks.leave_tasks.leave_tasks_tool import (
+    LeaveTasksTool,
+)
 from agent.tasks.tasks_state import (
     ExecuteNextToolAction,
     ExecuteToolCallsState,
     FinishExecuteToolCallsAction,
     InitExecuteToolCallsAction,
-    InitRespondWithTextAction,
     TasksState,
     reduce_execute_tool_calls_with_execute_next_tool,
     reduce_execute_tool_calls_with_finish_execute_tool_calls,
     reduce_none_with_init_execute_tool_calls,
-    reduce_none_with_init_respond_with_text,
 )
 from agent.tasks.update_task.update_task_tool import UpdateTaskTool
 
@@ -35,6 +45,7 @@ class TasksRouterNode:
         complete_task_tool: CompleteTaskTool,
         delete_task_tool: DeleteTaskTool,
         leave_tasks_tool: LeaveTasksTool,
+        chat_about_tasks_tool: ChatAboutTasksTool,
         branch_name: str,
         logger: Logger,
     ):
@@ -51,8 +62,9 @@ class TasksRouterNode:
                 complete_task_tool,
                 delete_task_tool,
                 leave_tasks_tool,
+                chat_about_tasks_tool,
             ],
-            tool_choice="auto",
+            tool_choice="required",
         )
 
     async def route(self, state: TasksState) -> dict:
@@ -87,20 +99,27 @@ class TasksRouterNode:
 
         raise ValueError(f"Unexpected tasks_substate: {type(tasks_substate).__name__}")
 
+    _TERMINAL_TOOLS = {_CHAT_ABOUT_TASKS, _LEAVE_TASKS}
+
+    _ADDITIONAL_INSTRUCTIONS = ""
+
+    def _truncate_at_terminal_tool(self, tool_calls: list[ToolCall]) -> list[ToolCall]:
+        for i, tc in enumerate(tool_calls):
+            if tc["name"] in self._TERMINAL_TOOLS:
+                truncated = tool_calls[i + 1 :]
+                if truncated:
+                    self._logger.warning(
+                        "[branch=%s] truncated tool_calls after terminal tool '%s': %s",
+                        self._branch_name,
+                        tc["name"],
+                        [t["name"] for t in truncated],
+                    )
+                return tool_calls[: i + 1]
+        return tool_calls
+
     async def _invoke_llm(self, messages: list[BaseMessage]) -> dict:
         self._logger.info("[branch=%s] handling", self._branch_name)
         response = await self._llm.ainvoke(messages=messages)
-
-        if not response.tool_calls:
-            self._logger.info("[branch=%s] text response", self._branch_name)
-            return {
-                "messages": [response],
-                "tasks_substate": reduce_none_with_init_respond_with_text(
-                    _state=None,
-                    action=InitRespondWithTextAction(message=response),
-                    logger=self._logger,
-                ),
-            }
 
         self._logger.info(
             "[branch=%s] tool_calls=%s",
@@ -108,14 +127,22 @@ class TasksRouterNode:
             [tc["name"] for tc in response.tool_calls],
         )
 
+        tool_calls = self._truncate_at_terminal_tool(
+            tool_calls=response.tool_calls,
+        )
+        skipped_messages = [
+            ToolMessage(content="Skipped.", tool_call_id=tc["id"])
+            for tc in response.tool_calls[len(tool_calls) :]
+        ]
+
         # noinspection PyTypeChecker
         return {
-            "messages": [response],
+            "messages": [response] + skipped_messages,
             "tasks_substate": reduce_none_with_init_execute_tool_calls(
                 _state=None,
                 action=InitExecuteToolCallsAction(
-                    pending_tool_calls=response.tool_calls[1:],
-                    current_tool_call=response.tool_calls[0],
+                    pending_tool_calls=tool_calls[1:],
+                    current_tool_call=tool_calls[0],
                 ),
                 logger=self._logger,
             ),

@@ -5,6 +5,8 @@ from microsoft_todo.src.container import MicrosoftTodoContainer
 from utils.common.src.config import settings
 from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
 
+from agent.tasks.chat_about_tasks.chat_about_tasks_node import ChatAboutTasksNode
+from agent.tasks.chat_about_tasks.chat_about_tasks_tool import ChatAboutTasksTool
 from agent.tasks.complete_task.complete_task_node import CompleteTaskNode
 from agent.tasks.complete_task.complete_task_tool import CompleteTaskTool
 from agent.tasks.create_task.create_task_node import CreateTaskNode
@@ -50,6 +52,7 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
         todo_client=microsoft_todo_container.microsoft_todo_client,
     )
     leave_tasks_tool = providers.Singleton(LeaveTasksTool)
+    chat_about_tasks_tool = providers.Singleton(ChatAboutTasksTool)
     handle_tasks_tool = providers.Singleton(HandleTasksTool)
 
     # Logger
@@ -67,11 +70,16 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
         complete_task_tool=complete_task_tool,
         delete_task_tool=delete_task_tool,
         leave_tasks_tool=leave_tasks_tool,
+        chat_about_tasks_tool=chat_about_tasks_tool,
         branch_name=TASKS_BRANCH,
         logger=_logger,
     )
     text_response_node = providers.Singleton(
         TextResponseNode,
+        logger=_logger,
+    )
+    chat_about_tasks_node = providers.Singleton(
+        ChatAboutTasksNode,
         logger=_logger,
     )
     leave_tasks_node = providers.Singleton(
@@ -109,6 +117,7 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
         CreateTasksSubgraph,
         router_node=router_node,
         text_response_node=text_response_node,
+        chat_about_tasks_node=chat_about_tasks_node,
         leave_tasks_node=leave_tasks_node,
         create_task_node=create_task_node,
         get_tasks_node=get_tasks_node,
