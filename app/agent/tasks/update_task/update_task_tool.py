@@ -60,6 +60,7 @@ class UpdateTaskTool(BaseTool):
                 else StaysTheSame()
             ),
             status=StaysTheSame(),
+            completed_date=StaysTheSame(),
         )
 
         context = f"Updated task: id={task['id']}, title={task['title']}"

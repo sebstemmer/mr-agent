@@ -14,12 +14,6 @@ from agent.tasks.complete_task.complete_task_tool import CompleteTaskTool
 from agent.tasks.create_task.create_task_tool import CreateTaskTool
 from agent.tasks.delete_task.delete_task_tool import DeleteTaskTool
 from agent.tasks.get_tasks.get_tasks_tool import GetTasksTool
-from agent.tasks.leave_tasks.leave_tasks_tool import (
-    _TOOL_NAME as _LEAVE_TASKS,
-)
-from agent.tasks.leave_tasks.leave_tasks_tool import (
-    LeaveTasksTool,
-)
 from agent.tasks.tasks_state import (
     ExecuteNextToolAction,
     ExecuteToolCallsState,
@@ -44,7 +38,6 @@ class TasksRouterNode:
         update_task_tool: UpdateTaskTool,
         complete_task_tool: CompleteTaskTool,
         delete_task_tool: DeleteTaskTool,
-        leave_tasks_tool: LeaveTasksTool,
         chat_about_tasks_tool: ChatAboutTasksTool,
         branch_name: str,
         logger: Logger,
@@ -61,10 +54,11 @@ class TasksRouterNode:
                 update_task_tool,
                 complete_task_tool,
                 delete_task_tool,
-                leave_tasks_tool,
                 chat_about_tasks_tool,
             ],
             tool_choice="required",
+            parallel_tool_calls=True,
+            additional_instructions=None,
         )
 
     async def route(self, state: TasksState) -> dict:
@@ -99,7 +93,7 @@ class TasksRouterNode:
 
         raise ValueError(f"Unexpected tasks_substate: {type(tasks_substate).__name__}")
 
-    _TERMINAL_TOOLS = {_CHAT_ABOUT_TASKS, _LEAVE_TASKS}
+    _TERMINAL_TOOLS = {_CHAT_ABOUT_TASKS}
 
     _ADDITIONAL_INSTRUCTIONS = ""
 

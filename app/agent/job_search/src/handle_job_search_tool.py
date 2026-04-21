@@ -2,8 +2,11 @@ from langchain_core.tools import BaseTool
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
 
+TOOL_NAME = "handle_job_search"
+
+
 class HandleJobSearchTool(BaseTool):
-    name: str = "handle_job_search"
+    name: str = TOOL_NAME
     description: str = "Handles job search related questions."
 
     async def _arun(self, **kwargs) -> None:

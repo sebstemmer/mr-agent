@@ -11,14 +11,15 @@ from agent.tasks.complete_task.complete_task_node import CompleteTaskNode
 from agent.tasks.complete_task.complete_task_tool import CompleteTaskTool
 from agent.tasks.create_task.create_task_node import CreateTaskNode
 from agent.tasks.create_task.create_task_tool import CreateTaskTool
-from agent.tasks.create_tasks_subgraph import TASKS_BRANCH, CreateTasksSubgraph
+from agent.tasks.create_tasks_subgraph import (
+    PERSONAL_TASKS_LIST_BRANCH,
+    CreateTasksSubgraph,
+)
 from agent.tasks.delete_task.delete_task_node import DeleteTaskNode
 from agent.tasks.delete_task.delete_task_tool import DeleteTaskTool
 from agent.tasks.get_tasks.get_tasks_node import GetTasksNode
 from agent.tasks.get_tasks.get_tasks_tool import GetTasksTool
-from agent.tasks.handle_tasks_tool import HandleTasksTool
-from agent.tasks.leave_tasks.leave_tasks_node import LeaveTasksNode
-from agent.tasks.leave_tasks.leave_tasks_tool import LeaveTasksTool
+from agent.tasks.personal_task_list_tool import PersonalTaskListTool
 from agent.tasks.tasks_router_node import TasksRouterNode
 from agent.tasks.text_response.text_response_node import TextResponseNode
 from agent.tasks.update_task.update_task_node import UpdateTaskNode
@@ -51,9 +52,8 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
         DeleteTaskTool,
         todo_client=microsoft_todo_container.microsoft_todo_client,
     )
-    leave_tasks_tool = providers.Singleton(LeaveTasksTool)
     chat_about_tasks_tool = providers.Singleton(ChatAboutTasksTool)
-    handle_tasks_tool = providers.Singleton(HandleTasksTool)
+    personal_task_list_tool = providers.Singleton(PersonalTaskListTool)
 
     # Logger
     _logger = providers.Singleton(logging.getLogger, "tasks")
@@ -69,9 +69,8 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
         update_task_tool=update_task_tool,
         complete_task_tool=complete_task_tool,
         delete_task_tool=delete_task_tool,
-        leave_tasks_tool=leave_tasks_tool,
         chat_about_tasks_tool=chat_about_tasks_tool,
-        branch_name=TASKS_BRANCH,
+        branch_name=PERSONAL_TASKS_LIST_BRANCH,
         logger=_logger,
     )
     text_response_node = providers.Singleton(
@@ -80,10 +79,6 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
     )
     chat_about_tasks_node = providers.Singleton(
         ChatAboutTasksNode,
-        logger=_logger,
-    )
-    leave_tasks_node = providers.Singleton(
-        LeaveTasksNode,
         logger=_logger,
     )
     create_task_node = providers.Singleton(
@@ -118,7 +113,6 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
         router_node=router_node,
         text_response_node=text_response_node,
         chat_about_tasks_node=chat_about_tasks_node,
-        leave_tasks_node=leave_tasks_node,
         create_task_node=create_task_node,
         get_tasks_node=get_tasks_node,
         complete_task_node=complete_task_node,

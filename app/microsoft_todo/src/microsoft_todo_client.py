@@ -81,6 +81,7 @@ class MicrosoftTodoClient:
         title: UpdateField[str],
         due_date: UpdateField[date | None],
         status: UpdateField[TaskStatus],
+        completed_date: UpdateField[date | None],
     ) -> dict:
         body: dict = {}
         if isinstance(title, Update):
@@ -93,6 +94,12 @@ class MicrosoftTodoClient:
             )
         if isinstance(status, Update):
             body["status"] = status.value.value
+        if isinstance(completed_date, Update):
+            body["completedDateTime"] = (
+                {"dateTime": completed_date.value.isoformat(), "timeZone": "UTC"}
+                if completed_date.value is not None
+                else None
+            )
         return await self._request(
             method="PATCH",
             path=f"/me/todo/lists/{self._list_id}/tasks/{task_id}",

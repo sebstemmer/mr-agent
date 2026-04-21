@@ -13,19 +13,25 @@ class LlmWithSystemPrompt:
         system_prompt: str,
         tools: list[BaseTool],
         tool_choice: str,
+        parallel_tool_calls: bool,
+        additional_instructions: list[str] | None,
     ):
         self._system_prompt = system_prompt
+        self._additional_instructions = additional_instructions or []
         # noinspection PyTypeChecker
         llm = ChatOpenAI(api_key=api_key, model=model)
-        self._bound_llm = llm.bind_tools(tools, tool_choice=tool_choice)
+        self._bound_llm = llm.bind_tools(
+            tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
+        )
 
     async def ainvoke(
         self,
         messages: list[BaseMessage],
-        additional_instructions: list[str] | None = None,
     ) -> AIMessage:
         today = today_berlin().isoformat()
         content = self._system_prompt.format(today=today)
-        content += "".join(f" {i}" for i in additional_instructions or [])
+        content += "".join(f" {i}" for i in self._additional_instructions)
         system_message = SystemMessage(content=content)
         return await self._bound_llm.ainvoke([system_message] + messages)

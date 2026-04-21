@@ -1,9 +1,11 @@
+from datetime import date
 from typing import Type
 
 from langchain_core.tools import BaseTool
 from microsoft_todo.src.microsoft_todo_client import MicrosoftTodoClient
 from microsoft_todo.src.task_status import TaskStatus
 from pydantic import BaseModel, Field
+from utils.common.src.datetime_utils import today_berlin
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.common.src.update_field import StaysTheSame, Update
 
@@ -15,6 +17,10 @@ _TOOL_NAME = "complete_task"
 class CompleteTaskInput(BaseModel):
     task_id: str = Field(description="The task ID from a previous get_tasks result.")
     title: str = Field(description="The title of the task to complete.")
+    completed_date: date | None = Field(
+        default=None,
+        description="The date the task was completed (YYYY-MM-DD). Defaults to today.",
+    )
 
 
 class CompleteTaskTool(BaseTool):
@@ -30,12 +36,13 @@ class CompleteTaskTool(BaseTool):
     class Config:
         arbitrary_types_allowed = True
 
-    async def _arun(self, task_id: str, title: str) -> tuple[str, str]:
+    async def _arun(self, task_id: str, title: str, completed_date: date | None = None) -> tuple[str, str]:
         task = await self.todo_client.update_by_id(
             task_id=task_id,
             title=StaysTheSame(),
             due_date=StaysTheSame(),
             status=Update(value=TaskStatus.COMPLETED),
+            completed_date=Update(value=completed_date or today_berlin()),
         )
 
         context = f"Completed task: id={task['id']}, title={task['title']}"

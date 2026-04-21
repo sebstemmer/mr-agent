@@ -6,4 +6,3 @@ from langgraph.graph import add_messages
 
 class AgentState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
-    current_branch: str | None

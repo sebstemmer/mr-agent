@@ -1,35 +1,12 @@
 from logging import Logger
-from typing import Type
 
 from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.tools import BaseTool
-from pydantic import BaseModel
 from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
-from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 from utils.common.src.unknown_tool_called import UnknownToolCalled
 
 from agent.weather.src.get_weather_tool import GetWeatherTool
 
 WEATHER_BRANCH = "weather"
-LEAVE_WEATHER_BRANCH_TOOL_NAME = "leave_weather_branch"
-
-
-class _LeaveInput(BaseModel):
-    pass
-
-
-class _LeaveWeatherBranchTool(BaseTool):
-    name: str = LEAVE_WEATHER_BRANCH_TOOL_NAME
-    description: str = (
-        "Use when the user has changed topic and is no longer asking about weather."
-    )
-    args_schema: Type[BaseModel] = _LeaveInput
-
-    async def _arun(self) -> None:
-        pass
-
-    def _run(self) -> None:
-        raise SyncRunNotImplemented()
 
 
 class HandleWeatherNode:
@@ -47,8 +24,10 @@ class HandleWeatherNode:
             api_key=api_key,
             model=model,
             system_prompt=system_prompt,
-            tools=[get_weather_tool, _LeaveWeatherBranchTool()],
+            tools=[get_weather_tool],
             tool_choice="auto",
+            parallel_tool_calls=False,
+            additional_instructions=None,
         )
 
     async def handle(self, messages: list[BaseMessage]) -> dict:
@@ -57,24 +36,15 @@ class HandleWeatherNode:
 
         if not response.tool_calls:
             self._logger.info("[branch=%s] text response", WEATHER_BRANCH)
-            return {
-                "messages": [AIMessage(content=response.content)],
-                "current_branch": WEATHER_BRANCH,
-            }
+            return {"messages": [AIMessage(content=response.content)]}
 
         # noinspection PyTypeChecker
         tool_call = response.tool_calls[0]
         tool_name = tool_call["name"]
         self._logger.info("[branch=%s] tool=%s", WEATHER_BRANCH, tool_name)
 
-        if tool_name == LEAVE_WEATHER_BRANCH_TOOL_NAME:
-            return {"current_branch": None}
-
         if tool_name == self._get_weather_tool.name:
             result = await self._get_weather_tool.ainvoke(input=tool_call["args"])
-            return {
-                "messages": [AIMessage(content=result)],
-                "current_branch": WEATHER_BRANCH,
-            }
+            return {"messages": [AIMessage(content=result)]}
 
         raise UnknownToolCalled(tool_name=tool_name)

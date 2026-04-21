@@ -49,11 +49,6 @@ class InitExecuteToolCallsAction(_TasksActionInterface):
 
 
 @dataclass
-class InitRespondWithTextAction(_TasksActionInterface):
-    message: AIMessage
-
-
-@dataclass
 class FinishExecuteToolCallsAction(_TasksActionInterface):
     message: AIMessage
 
@@ -80,16 +75,6 @@ def reduce_none_with_init_execute_tool_calls(
     )
 
 
-def reduce_none_with_init_respond_with_text(
-    _state: None,
-    action: InitRespondWithTextAction,
-    logger: logging.Logger,
-) -> RespondWithTextState:
-    logger.info("None + InitRespondWithTextAction -> RespondWithTextState")
-    logger.debug("state=%s action=%s", _state, action)
-    return RespondWithTextState(message=action.message)
-
-
 def reduce_respond_with_text_with_reset_to_none(
     _state: RespondWithTextState,
     _action: ResetToNoneAction,
@@ -105,7 +90,9 @@ def reduce_execute_tool_calls_with_finish_execute_tool_calls(
     action: FinishExecuteToolCallsAction,
     logger: logging.Logger,
 ) -> RespondWithTextState:
-    logger.info("ExecuteToolCallsState + FinishExecuteToolCallsAction -> RespondWithTextState")
+    logger.info(
+        "ExecuteToolCallsState + FinishExecuteToolCallsAction -> RespondWithTextState"
+    )
     logger.debug("state=%s action=%s", _state, action)
     return RespondWithTextState(message=action.message)
 
@@ -115,7 +102,9 @@ def reduce_execute_tool_calls_with_append_human_tool_response_to_responses(
     action: AppendHumanToolResponseToResponsesAction,
     logger: logging.Logger,
 ) -> ExecuteToolCallsState:
-    logger.info("ExecuteToolCallsState + AppendHumanToolResponseToResponsesAction -> ExecuteToolCallsState")
+    logger.info(
+        "ExecuteToolCallsState + AppendHumanToolResponseToResponsesAction -> ExecuteToolCallsState"
+    )
     logger.debug("state=%s action=%s", state, action)
     return ExecuteToolCallsState(
         pending_tool_calls=state.pending_tool_calls,
@@ -129,7 +118,9 @@ def reduce_execute_tool_calls_with_execute_next_tool(
     _action: ExecuteNextToolAction,
     logger: logging.Logger,
 ) -> ExecuteToolCallsState:
-    logger.info("ExecuteToolCallsState + ExecuteNextToolAction -> ExecuteToolCallsState")
+    logger.info(
+        "ExecuteToolCallsState + ExecuteNextToolAction -> ExecuteToolCallsState"
+    )
     logger.debug("state=%s action=%s", state, _action)
     # noinspection PyTypeChecker
     return ExecuteToolCallsState(
@@ -153,11 +144,3 @@ def get_tasks_substate(state: TasksState, expected_type: type[_T]) -> _T:
             f"Expected {expected_type.__name__}, got {type(tasks_substate).__name__}"
         )
     return tasks_substate
-
-
-def clear_subgraph_state(state: TasksState) -> dict:
-    return {
-        "messages": state["messages"],
-        "current_branch": state["current_branch"],
-        "router_state": None,
-    }
