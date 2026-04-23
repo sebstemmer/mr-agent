@@ -3,13 +3,16 @@ from logging import Logger
 from langchain_core.messages import ToolMessage
 from utils.common.src.confirm import confirm
 
-from agent.tasks.delete_task.delete_task_tool import DeleteTaskInput, DeleteTaskTool
-from agent.tasks.tasks_state import (
+from agent.common.sequential_tool_execution_state import (
     AppendHumanToolResponseToResponsesAction,
     ExecuteToolCallsState,
-    TasksState,
-    get_tasks_substate,
     reduce_execute_tool_calls_with_append_human_tool_response_to_responses,
+)
+from agent.tasks.delete_task.delete_task_tool import DeleteTaskInput, DeleteTaskTool
+from agent.tasks.tasks_state import (
+    TASKS_SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+    TasksState,
+    get_tasks_sequential_tool_execution_state,
 )
 
 
@@ -19,8 +22,8 @@ class DeleteTaskNode:
         self._logger = logger
 
     async def execute(self, state: TasksState) -> dict:
-        tasks_substate = get_tasks_substate(
-            state=state, expected_type=ExecuteToolCallsState
+        tasks_substate = get_tasks_sequential_tool_execution_state(
+            tasks_state=state, expected_type=ExecuteToolCallsState
         )
         tool_call = tasks_substate.current_tool_call
         args = DeleteTaskInput(**tool_call["args"])
@@ -33,7 +36,7 @@ class DeleteTaskNode:
                         tool_call_id=tool_call["id"],
                     ),
                 ],
-                "tasks_substate": reduce_execute_tool_calls_with_append_human_tool_response_to_responses(
+                TASKS_SEQUENTIAL_TOOL_EXECUTION_STATE_KEY: reduce_execute_tool_calls_with_append_human_tool_response_to_responses(
                     state=tasks_substate,
                     action=AppendHumanToolResponseToResponsesAction(
                         response=f"Deletion of '{args.title}' declined."
@@ -49,7 +52,7 @@ class DeleteTaskNode:
 
         return {
             "messages": [tool_message],
-            "tasks_substate": reduce_execute_tool_calls_with_append_human_tool_response_to_responses(
+            TASKS_SEQUENTIAL_TOOL_EXECUTION_STATE_KEY: reduce_execute_tool_calls_with_append_human_tool_response_to_responses(
                 state=tasks_substate,
                 action=AppendHumanToolResponseToResponsesAction(
                     response=tool_message.artifact

@@ -27,7 +27,10 @@ class HandleWeatherNode:
             tools=[get_weather_tool],
             tool_choice="auto",
             parallel_tool_calls=False,
-            additional_instructions=None,
+            additional_instructions=[
+                "You are only responsible for weather-related requests."
+                " Ignore anything unrelated to weather."
+            ],
         )
 
     async def handle(self, messages: list[BaseMessage]) -> dict:

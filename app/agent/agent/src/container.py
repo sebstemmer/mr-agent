@@ -9,7 +9,9 @@ from weather.src.container import WeatherContainer
 
 from agent.agent.src.create_agent import CreateAgent
 from agent.agent.src.router_node import RouterNode
+from agent.common.text_response_node import TextResponseNode
 from agent.job_search.src.container import JobSearchAgentContainer
+from agent.state.agent_state import SEQUENTIAL_TOOL_EXECUTION_STATE_KEY
 from agent.tasks.container import TasksSubgraphContainer
 from agent.weather.src.container import WeatherAgentContainer
 
@@ -42,6 +44,8 @@ class AgentContainer(containers.DeclarativeContainer):
         system_prompt=SYSTEM_PROMPT,
     )
 
+    _logger = providers.Singleton(logging.getLogger, "agent")
+
     router_node = providers.Singleton(
         RouterNode,
         api_key=settings.OPENAI_API_KEY,
@@ -52,15 +56,23 @@ class AgentContainer(containers.DeclarativeContainer):
             job_search_agent_container.handle_job_search_tool,
             tasks_subgraph_container.personal_task_list_tool,
         ),
-        logger=providers.Singleton(logging.getLogger, "agent"),
+        logger=_logger,
+    )
+
+    text_response_node = providers.Singleton(
+        TextResponseNode,
+        state_key=SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+        logger=_logger,
     )
 
     _create_agent = providers.Singleton(
         CreateAgent,
         router_node=router_node,
+        text_response_node=text_response_node,
         handle_weather_node=weather_agent_container.handle_weather_node,
         handle_job_search_node=job_search_agent_container.handle_job_search_node,
         create_tasks_subgraph=tasks_subgraph_container.create_tasks_subgraph,
+        logger=_logger,
     )
 
     agent = providers.Singleton(

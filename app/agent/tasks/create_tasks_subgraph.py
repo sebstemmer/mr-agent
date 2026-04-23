@@ -3,10 +3,11 @@ from logging import Logger
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from agent.tasks.chat_about_tasks.chat_about_tasks_node import ChatAboutTasksNode
-from agent.tasks.chat_about_tasks.chat_about_tasks_tool import (
-    _TOOL_NAME as _CHAT_ABOUT_TASKS,
+from agent.common.sequential_tool_execution_state import (
+    SequentialToolExecutionState,
+    route_by_sequential_tool_execution_state,
 )
+from agent.common.text_response_node import TextResponseNode
 from agent.tasks.complete_task.complete_task_node import CompleteTaskNode
 from agent.tasks.complete_task.complete_task_tool import _TOOL_NAME as _COMPLETE_TASK
 from agent.tasks.create_task.create_task_node import CreateTaskNode
@@ -17,11 +18,9 @@ from agent.tasks.get_tasks.get_tasks_node import GetTasksNode
 from agent.tasks.get_tasks.get_tasks_tool import _TOOL_NAME as _GET_TASKS
 from agent.tasks.tasks_router_node import TasksRouterNode
 from agent.tasks.tasks_state import (
-    ExecuteToolCallsState,
-    RespondWithTextState,
     TasksState,
+    get_tasks_sequential_tool_execution_state,
 )
-from agent.tasks.text_response.text_response_node import TextResponseNode
 from agent.tasks.update_task.update_task_node import UpdateTaskNode
 from agent.tasks.update_task.update_task_tool import _TOOL_NAME as _UPDATE_TASK
 
@@ -36,7 +35,6 @@ class CreateTasksSubgraph:
         self,
         router_node: TasksRouterNode,
         text_response_node: TextResponseNode,
-        chat_about_tasks_node: ChatAboutTasksNode,
         create_task_node: CreateTaskNode,
         get_tasks_node: GetTasksNode,
         complete_task_node: CompleteTaskNode,
@@ -47,7 +45,6 @@ class CreateTasksSubgraph:
         self._logger = logger
         self._router_node = router_node
         self._text_response_node = text_response_node
-        self._chat_about_tasks_node = chat_about_tasks_node
         self._create_task_node = create_task_node
         self._get_tasks_node = get_tasks_node
         self._complete_task_node = complete_task_node
@@ -55,13 +52,14 @@ class CreateTasksSubgraph:
         self._update_task_node = update_task_node
 
     def _route_after_router(self, state: TasksState) -> str:
-        router_state = state["tasks_substate"]
-        if isinstance(router_state, RespondWithTextState):
-            return _TEXT_RESPONSE
-        if isinstance(router_state, ExecuteToolCallsState):
-            return router_state.current_tool_call["name"]
-        self._logger.error("Unexpected router_state: %s", type(router_state).__name__)
-        return END
+        return route_by_sequential_tool_execution_state(
+            substate=get_tasks_sequential_tool_execution_state(
+                tasks_state=state,
+                expected_type=SequentialToolExecutionState,
+            ),
+            text_response_node_name=_TEXT_RESPONSE,
+            logger=self._logger,
+        )
 
     def create(self) -> CompiledStateGraph:
         # noinspection PyTypeChecker
@@ -71,8 +69,6 @@ class CreateTasksSubgraph:
         graph.add_node(_ROUTER, self._router_node.route)
         # noinspection PyTypeChecker
         graph.add_node(_TEXT_RESPONSE, self._text_response_node.execute)
-        # noinspection PyTypeChecker
-        graph.add_node(_CHAT_ABOUT_TASKS, self._chat_about_tasks_node.execute)
         # noinspection PyTypeChecker
         graph.add_node(_CREATE_TASK, self._create_task_node.execute)
         # noinspection PyTypeChecker
@@ -91,7 +87,6 @@ class CreateTasksSubgraph:
         graph.add_edge(_TEXT_RESPONSE, END)
 
         for node in (
-            _CHAT_ABOUT_TASKS,
             _CREATE_TASK,
             _GET_TASKS,
             _COMPLETE_TASK,

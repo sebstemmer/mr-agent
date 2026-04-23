@@ -37,7 +37,10 @@ class HandleJobSearchNode:
             ],
             tool_choice="auto",
             parallel_tool_calls=False,
-            additional_instructions=None,
+            additional_instructions=[
+                "You are only responsible for job search-related requests."
+                " Ignore anything unrelated to job search."
+            ],
         )
 
     async def handle(self, messages: list[BaseMessage]) -> dict:

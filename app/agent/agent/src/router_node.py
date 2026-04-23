@@ -1,24 +1,17 @@
 from logging import Logger
 
-from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import BaseTool
-from langgraph.types import Command
 from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
 
-from agent.job_search.src.handle_job_search_node import JOB_SEARCH_BRANCH
-from agent.job_search.src.handle_job_search_tool import TOOL_NAME as _JOB_SEARCH_TOOL
-from agent.tasks.create_tasks_subgraph import PERSONAL_TASKS_LIST_BRANCH
-from agent.tasks.personal_task_list_tool import TOOL_NAME as _PERSONAL_TASK_LIST_TOOL
-from agent.weather.src.handle_weather_node import WEATHER_BRANCH
-from agent.weather.src.handle_weather_tool import TOOL_NAME as _WEATHER_TOOL
-
-_TOOL_NAME_TO_BRANCH: dict[str, str] = {
-    _WEATHER_TOOL: WEATHER_BRANCH,
-    _JOB_SEARCH_TOOL: JOB_SEARCH_BRANCH,
-    _PERSONAL_TASK_LIST_TOOL: PERSONAL_TASKS_LIST_BRANCH,
-}
-
-_END = "__end__"
+from agent.common.sequential_tool_execution_state import (
+    init_execute_tool_calls_or_respond_with_text,
+    invoke_llm_execute_next_tool_or_finish_tool_execution,
+)
+from agent.state.agent_state import (
+    SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+    AgentState,
+    get_sequential_tool_execution_state_or_none,
+)
 
 
 class RouterNode:
@@ -37,24 +30,20 @@ class RouterNode:
             system_prompt=system_prompt,
             tools=tools,
             tool_choice="auto",
-            parallel_tool_calls=False,
+            parallel_tool_calls=True,
             additional_instructions=None,
         )
 
-    async def route(self, messages: list[BaseMessage]) -> Command:
-        response = await self._llm.ainvoke(messages=messages)
-
-        if not response.tool_calls:
-            self._logger.info("[router] text response")
-            return Command(
-                update={"messages": [AIMessage(content=response.content)]},
-                goto=_END,
-            )
-
-        # noinspection PyTypeChecker
-        tool_call = response.tool_calls[0]
-        tool_name = tool_call["name"]
-        branch = _TOOL_NAME_TO_BRANCH[tool_name]
-        self._logger.info("[router] tool=%s branch=%s", tool_name, branch)
-
-        return Command(goto=branch)
+    async def route(self, state: AgentState) -> dict:
+        return await invoke_llm_execute_next_tool_or_finish_tool_execution(
+            substate=get_sequential_tool_execution_state_or_none(state=state),
+            state_key=SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+            invoke_llm=lambda: init_execute_tool_calls_or_respond_with_text(
+                llm=self._llm,
+                messages=state["messages"],
+                state_key=SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+                logger=self._logger,
+                label="router",
+            ),
+            logger=self._logger,
+        )
