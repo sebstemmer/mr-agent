@@ -185,6 +185,7 @@ async def init_execute_tool_calls_or_respond_with_text(
     state_key: str,
     logger: logging.Logger,
     label: str,
+    add_response_to_messages: bool,
 ) -> dict:
     logger.info("[%s] handling", label)
     response = await llm.ainvoke(messages=messages)
@@ -210,7 +211,7 @@ async def init_execute_tool_calls_or_respond_with_text(
     tool_calls = response.tool_calls
 
     # noinspection PyTypeChecker
-    return {
+    result = {
         state_key: reduce_none_with_init_execute_tool_calls(
             _state=None,
             action=InitExecuteToolCallsAction(
@@ -220,6 +221,12 @@ async def init_execute_tool_calls_or_respond_with_text(
             logger=logger,
         ),
     }
+
+    if add_response_to_messages:
+        # noinspection PyTypeChecker
+        result["messages"] = [response]  # todo for sebstemmer: do this in substate
+
+    return result
 
 
 def route_by_sequential_tool_execution_state(

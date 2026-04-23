@@ -41,7 +41,9 @@ class TasksRouterNode:
 
     async def route(self, state: TasksState) -> dict:
         return await invoke_llm_execute_next_tool_or_finish_tool_execution(
-            substate=get_tasks_sequential_tool_execution_state_or_none(tasks_state=state),
+            substate=get_tasks_sequential_tool_execution_state_or_none(
+                tasks_state=state
+            ),
             state_key=TASKS_SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
             invoke_llm=lambda: init_execute_tool_calls_or_respond_with_text(
                 llm=self._llm,
@@ -49,6 +51,7 @@ class TasksRouterNode:
                 state_key=TASKS_SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
                 logger=self._logger,
                 label=self._branch_name,
+                add_response_to_messages=True,
             ),
             logger=self._logger,
         )

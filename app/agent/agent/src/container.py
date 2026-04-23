@@ -52,9 +52,9 @@ class AgentContainer(containers.DeclarativeContainer):
         model=CHAT_GPT_5_4_MINI_MODEL,
         system_prompt=SYSTEM_PROMPT,
         tools=providers.List(
-            weather_agent_container.handle_weather_tool,
-            job_search_agent_container.handle_job_search_tool,
-            tasks_subgraph_container.personal_task_list_tool,
+            weather_agent_container.handle_weather_tool,  # todo for sebstemmer
+            job_search_agent_container.handle_job_search_tool,  # todo for sebstemmer
+            tasks_subgraph_container.personal_task_list_tool,  # todo for sebstemmer
         ),
         logger=_logger,
     )

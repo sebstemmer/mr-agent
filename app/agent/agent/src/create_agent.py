@@ -56,9 +56,7 @@ class CreateAgent:
             logger=self._logger,
         )
 
-    def _append_to_human_tool_responses(
-        self, state: AgentState, response: str
-    ) -> dict:
+    def _append_to_human_tool_responses(self, state: AgentState, response: str) -> dict:
         substate = get_sequential_tool_execution_state(
             state=state, expected_type=ExecuteToolCallsState
         )
@@ -82,9 +80,7 @@ class CreateAgent:
             content = result["messages"][0].content
             return {
                 "messages": result["messages"],
-                **self._append_to_human_tool_responses(
-                    state=state, response=content
-                ),
+                **self._append_to_human_tool_responses(state=state, response=content),
             }
 
         async def _job_search(state: AgentState) -> dict:
@@ -94,16 +90,14 @@ class CreateAgent:
             content = result["messages"][0].content
             return {
                 "messages": result["messages"],
-                **self._append_to_human_tool_responses(
-                    state=state, response=content
-                ),
+                **self._append_to_human_tool_responses(state=state, response=content),
             }
 
         async def _tasks(state: AgentState) -> dict:
             result = await tasks_subgraph.ainvoke(state)
             last_message = result["messages"][-1]
             return {
-                "messages": [last_message],
+                "messages": result["messages"],
                 **self._append_to_human_tool_responses(
                     state=state, response=last_message.content
                 ),

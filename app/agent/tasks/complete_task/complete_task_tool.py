@@ -15,7 +15,7 @@ _TOOL_NAME = "complete_task"
 
 
 class CompleteTaskInput(BaseModel):
-    task_id: str = Field(description="The task ID from a previous get_tasks result.")
+    task_id: str = Field(description="The 'task_id' from the conversation context, not the index.")
     title: str = Field(description="The title of the task to complete.")
     completed_date: date | None = Field(
         default=None,
@@ -26,8 +26,7 @@ class CompleteTaskInput(BaseModel):
 class CompleteTaskTool(BaseTool):
     name: str = _TOOL_NAME
     description: str = (
-        "Marks a task as completed in the user's personal todo list. "
-        "Use the task ID from a previous get_tasks result."
+        "Marks a task as completed in the user's personal todo list."
     )
     args_schema: Type[BaseModel] = CompleteTaskInput
     response_format: str = "content_and_artifact"

@@ -13,7 +13,7 @@ _TOOL_NAME = "update_task"
 
 
 class UpdateTaskInput(BaseModel):
-    task_id: str = Field(description="The task ID from a previous get_tasks result.")
+    task_id: str = Field(description="The 'task_id' from the conversation context, not the index.")
     title: str | None = Field(
         default=None,
         description="New title for the task. Only provide if the user wants to change it.",
@@ -32,8 +32,7 @@ class UpdateTaskTool(BaseTool):
     name: str = _TOOL_NAME
     description: str = (
         "Updates an existing task in the user's personal todo list. "
-        "Can change title or due date. "
-        "Use the task ID from a previous get_tasks result."
+        "Can change title or due date."
     )
     args_schema: Type[BaseModel] = UpdateTaskInput
     response_format: str = "content_and_artifact"

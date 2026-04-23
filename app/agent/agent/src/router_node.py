@@ -44,6 +44,7 @@ class RouterNode:
                 state_key=SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
                 logger=self._logger,
                 label="router",
+                add_response_to_messages=False,
             ),
             logger=self._logger,
         )

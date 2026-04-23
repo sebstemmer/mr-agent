@@ -67,8 +67,8 @@ class GetTasksTool(BaseTool):
         context = json.dumps(
             [
                 {
-                    "number": index,
-                    "id": task["id"],
+                    "index": index,
+                    "task_id": task["id"],
                     "title": task["title"],
                 }
                 for index, task in enumerate(tasks, start=1)
