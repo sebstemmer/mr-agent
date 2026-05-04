@@ -1,16 +1,17 @@
 from logging import Logger
 
+from langchain_core.messages import AIMessage
 from langchain_core.tools import BaseTool
 from utils.common.src.llm_with_system_prompt import LlmWithSystemPrompt
 
-from agent.common.sequential_tool_execution_state import (
-    init_execute_tool_calls_or_respond_with_text,
-    invoke_llm_execute_next_tool_or_finish_tool_execution,
+from agent.common.parallel_tool_execution_state import (
+    ExecuteToolCallsState,
+    ExecutingToolsAction,
+    IdxAndToolCall,
+    RespondWithTextAction,
 )
 from agent.state.agent_state import (
-    SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
     AgentState,
-    get_sequential_tool_execution_state_or_none,
 )
 
 
@@ -34,17 +35,58 @@ class RouterNode:
             additional_instructions=None,
         )
 
+    # todo for sebstemmer: handle state call with string
     async def route(self, state: AgentState) -> dict:
-        return await invoke_llm_execute_next_tool_or_finish_tool_execution(
-            substate=get_sequential_tool_execution_state_or_none(state=state),
-            state_key=SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
-            invoke_llm=lambda: init_execute_tool_calls_or_respond_with_text(
-                llm=self._llm,
-                messages=state["messages"],
-                state_key=SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+        tool_execution_state = state["tool_execution_state"]
+
+        if tool_execution_state is None:
+            return await self._invoke_llm(
+                state=state,
+            )
+
+        if isinstance(tool_execution_state, ExecuteToolCallsState):
+            return await self._summarize(execute_tool_calls_state=tool_execution_state)
+
+        raise ValueError(f"tool_execution_state: {type(tool_execution_state).__name__}")
+
+    async def _invoke_llm(self, state: AgentState) -> dict:
+        response = await self._llm.ainvoke(messages=state["messages"])
+
+        if not response.tool_calls:
+            return {
+                "tool_execution_state": RespondWithTextAction(
+                    logger=self._logger, message=response
+                )
+            }
+        # todo for sebstemmer: add response
+        return {
+            "tool_execution_state": ExecutingToolsAction(
                 logger=self._logger,
-                label="router",
-                add_response_to_messages=False,
-            ),
-            logger=self._logger,
+                calls=[
+                    IdxAndToolCall(idx=idx, call=call)
+                    for idx, call in enumerate(response.tool_calls)
+                ],
+            )
+        }
+
+    async def _summarize(self, execute_tool_calls_state: ExecuteToolCallsState) -> dict:
+        combined_message = "\n\n".join(
+            [
+                message.response
+                for message in sorted(
+                    execute_tool_calls_state.human_responses, key=lambda m: m.idx
+                )
+            ]
         )
+
+        return {
+            "tool_execution_state": RespondWithTextAction(
+                logger=self._logger, message=AIMessage(content=combined_message)
+            ),
+            "messages": [
+                tool_message.message
+                for tool_message in sorted(
+                    execute_tool_calls_state.tool_messages, key=lambda m: m.idx
+                )
+            ],
+        }

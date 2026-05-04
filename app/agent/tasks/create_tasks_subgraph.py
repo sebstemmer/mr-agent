@@ -24,7 +24,7 @@ from agent.tasks.tasks_state import (
 from agent.tasks.update_task.update_task_node import UpdateTaskNode
 from agent.tasks.update_task.update_task_tool import _TOOL_NAME as _UPDATE_TASK
 
-PERSONAL_TASKS_LIST_BRANCH = "tasks"
+PERSONAL_TASK_LIST_BRANCH = "tasks"
 
 _ROUTER = "router"
 _TEXT_RESPONSE = "text_response"

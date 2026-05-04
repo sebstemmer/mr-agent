@@ -11,7 +11,7 @@ from agent.tasks.complete_task.complete_task_tool import CompleteTaskTool
 from agent.tasks.create_task.create_task_node import CreateTaskNode
 from agent.tasks.create_task.create_task_tool import CreateTaskTool
 from agent.tasks.create_tasks_subgraph import (
-    PERSONAL_TASKS_LIST_BRANCH,
+    PERSONAL_TASK_LIST_BRANCH,
     CreateTasksSubgraph,
 )
 from agent.tasks.delete_task.delete_task_node import DeleteTaskNode
@@ -69,7 +69,7 @@ class TasksSubgraphContainer(containers.DeclarativeContainer):
             complete_task_tool,
             delete_task_tool,
         ),
-        branch_name=PERSONAL_TASKS_LIST_BRANCH,
+        branch_name=PERSONAL_TASK_LIST_BRANCH,
         logger=_logger,
     )
     text_response_node = providers.Singleton(
