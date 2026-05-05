@@ -7,19 +7,19 @@ from agent_v2.agent.agent_state import (
     ExecutedToolAction,
     ExecuteToolCallState,
 )
-from agent_v2.weather.src.get_weather_tool import GetWeatherTool
+from agent_v2.email.src.send_email_tool import SendEmailTool
 
 
-class GetWeatherNode:
+class SendEmailNode:
     def __init__(
         self,
-        get_weather_tool: GetWeatherTool,
+        send_email_tool: SendEmailTool,
         logger: Logger,
     ):
-        self._get_weather_tool = get_weather_tool
+        self._send_email_tool = send_email_tool
         self._logger = logger
 
-    async def get(self, agent_state: AgentState) -> dict:
+    async def send(self, agent_state: AgentState) -> dict:
         state = agent_state["state"]
 
         if not isinstance(state, ExecuteToolCallState):
@@ -27,7 +27,7 @@ class GetWeatherNode:
                 f"Expected ExecuteToolCallState, got {type(state).__name__}"
             )
 
-        result = await self._get_weather_tool.ainvoke(input=state.call)
+        result = await self._send_email_tool.ainvoke(input=state.call)
 
         return {
             "state": ExecutedToolAction(

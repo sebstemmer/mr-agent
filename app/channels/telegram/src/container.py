@@ -1,4 +1,4 @@
-from agent.agent.src.container import AgentContainer
+from agent_v2.agent.container import AgentV2Container
 from channels.common.src.container import ChannelsCommonContainer
 from channels.telegram.src.bot import TelegramBot
 from channels.telegram.src.handle_telegram_init import HandleTelegramInit
@@ -9,7 +9,7 @@ from utils.common.src.config import settings
 
 
 class TelegramChannelContainer(containers.DeclarativeContainer):
-    agent_container: AgentContainer = providers.DependenciesContainer()
+    agent_container: AgentV2Container = providers.DependenciesContainer()
     channels_common_container: ChannelsCommonContainer = (
         providers.DependenciesContainer()
     )

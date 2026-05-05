@@ -1,9 +1,11 @@
+from agent_v2.agent.agent_state import AgentState, InitState, NewMessageAction
 from channels.common.src.save_or_update_chat_id_to_channel_type import (
     SaveOrUpdateChatIdToChannelType,
 )
 from channels.common.src.split_message import split_message
 from channels.telegram.src.const import CHANNEL_TYPE
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables.config import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 from telegram import Update
@@ -24,24 +26,32 @@ class HandleTelegramMessage:
             chat_id=str(update.effective_chat.id),
         )
 
-        config = {"configurable": {"thread_id": str(update.effective_user.id)}}
+        config: RunnableConfig = {
+            "configurable": {"thread_id": str(update.effective_user.id)}
+        }
         text = update.message.text
 
         state = await self._agent.aget_state(config)
         is_paused = any(task.interrupts for task in state.tasks)
 
         if is_paused:
-            graph_input = Command(resume=text)
+            graph_input: Command = Command(resume=text)
+        elif state.values.get("state") is None:
+            graph_input: AgentState = {
+                "state": InitState(messages=[HumanMessage(content=text)])
+            }
         else:
-            graph_input = {"messages": [HumanMessage(content=text)]}
+            graph_input: AgentState = {
+                "state": NewMessageAction(message=HumanMessage(content=text))
+            }
 
-        result = await self._agent.ainvoke(graph_input, config=config)
+        result: AgentState = await self._agent.ainvoke(input=graph_input, config=config)
 
         interrupts = result.get("__interrupt__")
         if interrupts:
             content = interrupts[0].value["question"]
         else:
-            content = result["messages"][-1].content
+            content = result["state"].messages[-1].content
 
         for message in split_message(text=content, max_length=4096):
             await update.message.reply_text(message)

@@ -1,4 +1,4 @@
-from agent.agent.src.container import AgentContainer
+from agent_v2.agent.container import AgentV2Container
 from channels.channels.src.container import ChannelsContainer
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
@@ -24,10 +24,8 @@ class Container(containers.DeclarativeContainer):
     )
 
     agent_container = providers.Container(
-        AgentContainer,
+        AgentV2Container,
         weather_container=weather_container,
-        job_search_container=job_search_container,
-        microsoft_todo_container=microsoft_todo_container,
     )
 
     channels_container = providers.Container(
