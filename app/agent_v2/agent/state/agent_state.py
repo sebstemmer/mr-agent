@@ -2,9 +2,14 @@ import logging
 from dataclasses import dataclass
 from typing import Annotated, TypedDict
 
-from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.messages.tool import ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, ToolMessage
+from langchain_core.messages.tool import ToolCall
 from langgraph.graph import add_messages
+
+
+@dataclass
+class _Action:
+    pass
 
 
 @dataclass
@@ -13,14 +18,13 @@ class State:
 
 
 @dataclass
-class InitState(State):
+class BaseState(State):
     pass
 
 
 @dataclass
 class ExecuteToolCallsState(State):
     calls: list[ToolCall]
-    displayable_messages: list[str]
 
 
 @dataclass
@@ -30,12 +34,7 @@ class ExecuteToolCallState(State):
 
 @dataclass
 class ExecutedToolsState(State):
-    displayable_messages: list[str]
-
-
-@dataclass
-class _Action:
-    pass
+    readable_tool_messages: list[AIMessage]
 
 
 @dataclass
@@ -51,13 +50,18 @@ class ExecuteToolCallsAction(_Action):
 
 @dataclass
 class ExecutedToolAction(_Action):
-    message: ToolMessage
-    displayable_message: str
+    tool_message: ToolMessage
+    readable_tool_message: AIMessage
 
 
 @dataclass
 class RespondWithTextAction(_Action):
     message: AIMessage
+
+
+@dataclass
+class MergeReadableToolMessagesAction(_Action):
+    readable_tool_messages: list[AIMessage]
 
 
 _logger = logging.getLogger(__name__)
@@ -66,27 +70,24 @@ _logger = logging.getLogger(__name__)
 def reduce(state: State, action: _Action) -> State:
     _logger.debug("state=%s action=%s", state, action)
 
-    if isinstance(state, InitState) and isinstance(action, NewMessageAction):
-        _logger.info(
-            f"{type(state).__name__} + {type(action).__name__} -> InitState"
-        )
-        return InitState(
+    if isinstance(state, BaseState) and isinstance(action, NewMessageAction):
+        _logger.info(f"{type(state).__name__} + {type(action).__name__} -> BaseState")
+        return BaseState(
             messages=add_messages(state.messages, [action.message]),
         )
 
-    if isinstance(state, InitState) and isinstance(action, ExecuteToolCallsAction):
+    if isinstance(state, BaseState) and isinstance(action, ExecuteToolCallsAction):
         _logger.info(
             f"{type(state).__name__} + {type(action).__name__} -> ExecuteToolCallsState"
         )
         return ExecuteToolCallsState(
             messages=add_messages(state.messages, [action.message]),
             calls=action.calls,
-            displayable_messages=[],
         )
 
-    if isinstance(state, InitState) and isinstance(action, RespondWithTextAction):
-        _logger.info(f"{type(state).__name__} + {type(action).__name__} -> InitState")
-        return InitState(
+    if isinstance(state, BaseState) and isinstance(action, RespondWithTextAction):
+        _logger.info(f"{type(state).__name__} + {type(action).__name__} -> BaseState")
+        return BaseState(
             messages=add_messages(state.messages, [action.message]),
         )
 
@@ -97,11 +98,8 @@ def reduce(state: State, action: _Action) -> State:
             f"{type(state).__name__} + {type(action).__name__} -> ExecutedToolsState"
         )
         return ExecutedToolsState(
-            messages=add_messages(state.messages, [action.message]),
-            displayable_messages=[
-                *state.displayable_messages,
-                action.displayable_message,
-            ],
+            messages=add_messages(state.messages, [action.tool_message]),
+            readable_tool_messages=[action.readable_tool_message],
         )
 
     if isinstance(state, ExecutedToolsState) and isinstance(action, ExecutedToolAction):
@@ -109,34 +107,19 @@ def reduce(state: State, action: _Action) -> State:
             f"{type(state).__name__} + {type(action).__name__} -> ExecutedToolsState"
         )
         return ExecutedToolsState(
-            messages=add_messages(state.messages, [action.message]),
-            displayable_messages=[
-                *state.displayable_messages,
-                action.displayable_message,
+            messages=add_messages(state.messages, [action.tool_message]),
+            readable_tool_messages=[
+                *state.readable_tool_messages,
+                action.readable_tool_message,
             ],
         )
 
     if isinstance(state, ExecutedToolsState) and isinstance(
-        action, ExecuteToolCallsAction
+        action, MergeReadableToolMessagesAction
     ):
-        _logger.info(
-            f"{type(state).__name__} + {type(action).__name__} -> ExecuteToolCallsState"
-        )
-        return ExecuteToolCallsState(
-            messages=add_messages(state.messages, [action.message]),
-            calls=action.calls,
-            displayable_messages=[*state.displayable_messages],
-        )
-
-    if isinstance(state, ExecutedToolsState) and isinstance(
-        action, RespondWithTextAction
-    ):
-        _logger.info(f"{type(state).__name__} + {type(action).__name__} -> InitState")
-        return InitState(
-            messages=add_messages(
-                state.messages,
-                [AIMessage(content="\n\n".join(state.displayable_messages))],
-            ),
+        _logger.info(f"{type(state).__name__} + {type(action).__name__} -> BaseState")
+        return BaseState(
+            messages=add_messages(state.messages, action.readable_tool_messages),
         )
 
     raise ValueError(
