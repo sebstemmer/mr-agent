@@ -1,11 +1,11 @@
 from logging import Logger
 
-from agent_v2.agent.state.agent_state import (
+from agent_v2.agent.src.state.agent_state import (
     AgentState,
     ExecutedToolsState,
     MergeReadableToolMessagesAction,
 )
-from agent_v2.agent.state.unexpected_state_error import UnexpectedStateError
+from agent_v2.agent.src.state.unexpected_state_error import UnexpectedStateError
 
 
 class MergeReadableToolMessagesNode:

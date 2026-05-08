@@ -3,7 +3,7 @@ from langchain_core.runnables.config import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
-from agent_v2.agent.state.agent_state import AgentState, BaseState, NewMessageAction
+from agent_v2.agent.src.state.agent_state import AgentState, NewMessageAction, BaseState
 
 
 class HandleIncomingMessage:

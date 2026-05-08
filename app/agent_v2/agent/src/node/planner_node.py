@@ -4,8 +4,8 @@ from logging import Logger
 from langchain_core.tools import BaseTool
 from utils.common.src.llm_builder import LlmBuilder
 
-from agent_v2.agent.state.agent_state import AgentState, ExecuteToolCallsAction
-from agent_v2.agent.state.dispatch_respond_with_text_action import (
+from agent_v2.agent.src.state.agent_state import AgentState, ExecuteToolCallsAction
+from agent_v2.agent.src.state.dispatch_respond_with_text_action import (
     DispatchRespondWithTextAction,
 )
 

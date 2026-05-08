@@ -3,8 +3,8 @@ from logging import Logger
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.messages.tool import ToolCall
 
-from agent_v2.agent.state.agent_state import ExecutedToolAction
-from agent_v2.agent.message_sender import MessageSender
+from agent_v2.agent.src.message_sender import MessageSender
+from agent_v2.agent.src.state.agent_state import ExecutedToolAction
 
 
 class DispatchExecutedToolAction:
