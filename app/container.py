@@ -31,6 +31,7 @@ class Container(containers.DeclarativeContainer):
         AgentV2Container,
         weather_container=weather_container,
         microsoft_todo_container=microsoft_todo_container,
+        job_search_container=job_search_container,
         send_message=channels_container.telegram_channel_container.send_telegram_message,
     )
 

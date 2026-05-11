@@ -11,6 +11,8 @@ from agent_v2.tasks.src.delete_task.delete_task_tool import DeleteTaskTool
 from agent_v2.tasks.src.get_tasks.get_tasks_node import GetTasksNode
 from agent_v2.tasks.src.get_tasks.get_tasks_tool import GetTasksTool
 from agent_v2.tasks.src.task_lists import PERSONAL_TASKS
+from agent_v2.tasks.src.update_task.update_task_node import UpdateTaskNode
+from agent_v2.tasks.src.update_task.update_task_tool import UpdateTaskTool
 
 
 class TasksAgentContainer(containers.DeclarativeContainer):
@@ -60,6 +62,19 @@ class TasksAgentContainer(containers.DeclarativeContainer):
     delete_task_node = providers.Singleton(
         DeleteTaskNode,
         delete_task_tool=delete_task_tool,
+        dispatch_executed_tool_action=dispatch_executed_tool_action,
+        logger=_logger,
+    )
+
+    update_task_tool = providers.Singleton(
+        UpdateTaskTool,
+        todo_client=microsoft_todo_container.microsoft_todo_client,
+        list_name_to_id=_list_name_to_id,
+    )
+
+    update_task_node = providers.Singleton(
+        UpdateTaskNode,
+        update_task_tool=update_task_tool,
         dispatch_executed_tool_action=dispatch_executed_tool_action,
         logger=_logger,
     )

@@ -1,6 +1,6 @@
 import asyncio
 
-from agent.tasks.format_task import format_task
+from agent_v2.tasks.src.format_task import format_task
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
 from job_search.src.get_interesting_jobs import GetInterestingJobs
 from job_search.src.refresh_jobs import RefreshJobs
