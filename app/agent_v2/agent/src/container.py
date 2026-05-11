@@ -25,6 +25,12 @@ from agent_v2.agent.src.tool_registry import ToolRegistryEntry
 from agent_v2.email.src.container import EmailAgentContainer
 from agent_v2.email.src.send_email_tool import TOOL_NAME as _SEND_EMAIL_TOOL_NAME
 from agent_v2.tasks.src.container import TasksAgentContainer
+from agent_v2.tasks.src.create_task.create_task_tool import (
+    TOOL_NAME as _CREATE_TASK_TOOL_NAME,
+)
+from agent_v2.tasks.src.delete_task.delete_task_tool import (
+    TOOL_NAME as _DELETE_TASK_TOOL_NAME,
+)
 from agent_v2.tasks.src.get_tasks.get_tasks_tool import (
     TOOL_NAME as _GET_TASKS_TOOL_NAME,
 )
@@ -83,6 +89,8 @@ class AgentV2Container(containers.DeclarativeContainer):
             weather_agent_container.get_weather_tool,
             email_agent_container.send_email_tool,
             tasks_agent_container.get_tasks_tool,
+            tasks_agent_container.create_task_tool,
+            tasks_agent_container.delete_task_tool,
         ),
         logger=_logger,
         dispatch_respond_with_text_action=_dispatch_respond_with_text_action,
@@ -105,6 +113,16 @@ class AgentV2Container(containers.DeclarativeContainer):
                 node_name="get_tasks",
                 display_name="Get Tasks Tool",
             ),
+            _CREATE_TASK_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="create_task",
+                display_name="Create Task Tool",
+            ),
+            _DELETE_TASK_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="delete_task",
+                display_name="Delete Task Tool",
+            ),
         }
     )
 
@@ -126,6 +144,8 @@ class AgentV2Container(containers.DeclarativeContainer):
         get_weather_node=weather_agent_container.get_weather_node,
         send_email_node=email_agent_container.send_email_node,
         get_tasks_node=tasks_agent_container.get_tasks_node,
+        create_task_node=tasks_agent_container.create_task_node,
+        delete_task_node=tasks_agent_container.delete_task_node,
         merge_readable_tool_messages_node=_merge_readable_tool_messages_node,
         tool_registry=_tool_registry,
         create_execute_tool_call_state=_create_execute_tool_call_state,
@@ -140,4 +160,5 @@ class AgentV2Container(containers.DeclarativeContainer):
     handle_incoming_message = providers.Singleton(
         HandleIncomingMessage,
         agent=_agent,
+        send_message=send_message,
     )

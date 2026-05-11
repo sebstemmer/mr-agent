@@ -20,6 +20,14 @@ from agent_v2.agent.src.state.create_execute_tool_call_state import (
 from agent_v2.agent.src.tool_registry import ToolRegistry
 from agent_v2.email.src.send_email_node import SendEmailNode
 from agent_v2.email.src.send_email_tool import TOOL_NAME as _SEND_EMAIL_TOOL_NAME
+from agent_v2.tasks.src.create_task.create_task_node import CreateTaskNode
+from agent_v2.tasks.src.create_task.create_task_tool import (
+    TOOL_NAME as _CREATE_TASK_TOOL_NAME,
+)
+from agent_v2.tasks.src.delete_task.delete_task_node import DeleteTaskNode
+from agent_v2.tasks.src.delete_task.delete_task_tool import (
+    TOOL_NAME as _DELETE_TASK_TOOL_NAME,
+)
 from agent_v2.tasks.src.get_tasks.get_tasks_node import GetTasksNode
 from agent_v2.tasks.src.get_tasks.get_tasks_tool import (
     TOOL_NAME as _GET_TASKS_TOOL_NAME,
@@ -38,6 +46,8 @@ class CreateAgent:
         get_weather_node: GetWeatherNode,
         send_email_node: SendEmailNode,
         get_tasks_node: GetTasksNode,
+        create_task_node: CreateTaskNode,
+        delete_task_node: DeleteTaskNode,
         merge_readable_tool_messages_node: MergeReadableToolMessagesNode,
         tool_registry: ToolRegistry,
         create_execute_tool_call_state: CreateExecuteToolCallState,
@@ -47,6 +57,8 @@ class CreateAgent:
         self._get_weather_node = get_weather_node
         self._send_email_node = send_email_node
         self._get_tasks_node = get_tasks_node
+        self._create_task_node = create_task_node
+        self._delete_task_node = delete_task_node
         self._merge_readable_tool_messages_node = merge_readable_tool_messages_node
         self._tool_registry = tool_registry
         self._create_execute_tool_call_state = create_execute_tool_call_state
@@ -72,6 +84,16 @@ class CreateAgent:
         graph.add_node(
             self._tool_registry[_GET_TASKS_TOOL_NAME].node_name,
             self._get_tasks_node.get,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_CREATE_TASK_TOOL_NAME].node_name,
+            self._create_task_node.create,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_DELETE_TASK_TOOL_NAME].node_name,
+            self._delete_task_node.delete,
         )
         # noinspection PyTypeChecker
         graph.add_node(
