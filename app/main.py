@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
 
-from agent_v2.agent.src.handle_incoming_message import HandleIncomingMessage
+from agent.agent.src.handle_incoming_message import HandleIncomingMessage
 from channels.telegram.src.bot import TelegramBot
 from dotenv import load_dotenv
 from telegram import Update

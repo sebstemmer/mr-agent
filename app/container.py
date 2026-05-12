@@ -1,4 +1,4 @@
-from agent_v2.agent.src.container import AgentV2Container
+from agent.agent.src.container import AgentV2Container
 from channels.channels.src.container import ChannelsContainer
 from dependency_injector import containers, providers
 from job_search.src.container import JobSearchContainer
