@@ -23,17 +23,16 @@ class Container(containers.DeclarativeContainer):
         MicrosoftTodoContainer, utils_container=utils_container
     )
 
+    channels_container = providers.Container(
+        ChannelsContainer, utils_container=utils_container
+    )
+
     agent_container = providers.Container(
         AgentContainer,
         weather_container=weather_container,
-        job_search_container=job_search_container,
         microsoft_todo_container=microsoft_todo_container,
-    )
-
-    channels_container = providers.Container(
-        ChannelsContainer,
-        utils_container=utils_container,
-        agent_container=agent_container,
+        job_search_container=job_search_container,
+        send_message=channels_container.telegram_channel_container.send_telegram_message,
     )
 
     morning_briefing = providers.Container(

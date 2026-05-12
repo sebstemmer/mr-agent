@@ -16,6 +16,5 @@ class MicrosoftTodoContainer(containers.DeclarativeContainer):
         client_id=settings.MICROSOFT_CLIENT_ID,
         client_secret=settings.MICROSOFT_CLIENT_SECRET,
         refresh_token=settings.MICROSOFT_REFRESH_TOKEN,
-        list_id=settings.MICROSOFT_TODO_LIST_ID,
         logger=providers.Singleton(logging.getLogger, "microsoft_todo"),
     )

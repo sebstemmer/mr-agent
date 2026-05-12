@@ -20,6 +20,7 @@ class MorningBriefingContainer(containers.DeclarativeContainer):
         RunMorningBriefing,
         greeting=settings.MORNING_BRIEFING_GREETING,
         weather_location=settings.MORNING_BRIEFING_WEATHER_LOCATION,
+        personal_todo_list_id=settings.MICROSOFT_TODO_LIST_ID,
         refresh_jobs=job_search_container.refresh_jobs,
         get_interesting_jobs=job_search_container.get_interesting_jobs,
         get_weather=weather_container.get_weather,

@@ -23,17 +23,22 @@ class GetWeatherInput(BaseModel):
     )
 
 
+TOOL_NAME = "get_weather"
+
+
 class GetWeatherTool(BaseTool):
-    name: str = "get_weather"
+    name: str = TOOL_NAME
     description: str = "Returns the weather forecast for a given location and day."
     args_schema: Type[BaseModel] = GetWeatherInput
+    response_format: str = "content_and_artifact"
     get_weather: GetWeather
 
     class Config:
         arbitrary_types_allowed = True
 
-    async def _arun(self, location: str, day: int) -> str:
-        return await self.get_weather.get(location=location, day=day)
+    async def _arun(self, location: str, day: int) -> tuple[str, str]:
+        result = await self.get_weather.get(location=location, day=day)
+        return result, result
 
     def _run(self, location: str, day: int) -> str:
         raise SyncRunNotImplemented()

@@ -25,19 +25,21 @@ class MicrosoftTodoClient:
         client_id: str,
         client_secret: str,
         refresh_token: str,
-        list_id: str,
         logger: logging.Logger,
     ):
         self._client = client
         self._client_id = client_id
         self._client_secret = client_secret
         self._refresh_token = refresh_token
-        self._list_id = list_id
         self._logger = logger
         self._token = self._CachedToken()
 
     async def find_by_status_and_due_date_between_inclusive(
-        self, status: TaskStatus, due_from: date | None, due_to: date | None
+        self,
+        list_id: str,
+        status: TaskStatus,
+        due_from: date | None,
+        due_to: date | None,
     ) -> list[dict]:
         filters = [f"status eq '{status.value}'"]
         if due_from is not None:
@@ -48,13 +50,14 @@ class MicrosoftTodoClient:
             )
         response = await self._request(
             method="GET",
-            path=f"/me/todo/lists/{self._list_id}/tasks",
+            path=f"/me/todo/lists/{list_id}/tasks",
             params={"$filter": " and ".join(filters)},
         )
         return response["value"]
 
     async def save(
         self,
+        list_id: str,
         title: str,
         due_date: date | None,
         recurrence: dict | None,
@@ -71,12 +74,13 @@ class MicrosoftTodoClient:
             }
         return await self._request(
             method="POST",
-            path=f"/me/todo/lists/{self._list_id}/tasks",
+            path=f"/me/todo/lists/{list_id}/tasks",
             json=body,
         )
 
     async def update_by_id(
         self,
+        list_id: str,
         task_id: str,
         title: UpdateField[str],
         due_date: UpdateField[date | None],
@@ -102,14 +106,14 @@ class MicrosoftTodoClient:
             )
         return await self._request(
             method="PATCH",
-            path=f"/me/todo/lists/{self._list_id}/tasks/{task_id}",
+            path=f"/me/todo/lists/{list_id}/tasks/{task_id}",
             json=body,
         )
 
-    async def delete_by_id(self, task_id: str) -> None:
+    async def delete_by_id(self, list_id: str, task_id: str) -> None:
         await self._request(
             method="DELETE",
-            path=f"/me/todo/lists/{self._list_id}/tasks/{task_id}",
+            path=f"/me/todo/lists/{list_id}/tasks/{task_id}",
         )
 
     async def _request(

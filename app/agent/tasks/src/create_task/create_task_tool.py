@@ -7,12 +7,16 @@ from pydantic import BaseModel, Field
 from utils.common.src.datetime_utils import today_berlin
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
-from agent.tasks.recurrence import Recurrence, build_recurrence
+from agent.tasks.src.recurrence import Recurrence, build_recurrence
+from agent.tasks.src.task_lists import AVAILABLE_LISTS
 
-_TOOL_NAME = "create_task"
+TOOL_NAME = "create_task"
 
 
 class CreateTaskInput(BaseModel):
+    list_name: str = Field(
+        description=f"Name of the task list to create the task in. Available: {AVAILABLE_LISTS}.",
+    )
     title: str = Field(description="The title of the task to create.")
     due_date: str | None = Field(
         default=None,
@@ -32,21 +36,24 @@ class CreateTaskInput(BaseModel):
 
 
 class CreateTaskTool(BaseTool):
-    name: str = _TOOL_NAME
-    description: str = "Creates a new task in the user's personal todo list."
+    name: str = TOOL_NAME
+    description: str = "Creates a new task in a task list."
     args_schema: Type[BaseModel] = CreateTaskInput
     response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
+    list_name_to_id: dict[str, str]
 
     class Config:
         arbitrary_types_allowed = True
 
     async def _arun(
         self,
+        list_name: str,
         title: str,
         due_date: str | None = None,
         recurrence: Recurrence | None = None,
     ) -> tuple[str, str]:
+        list_id = self.list_name_to_id[list_name]
         if recurrence and not due_date:
             due_date = today_berlin().isoformat()
         parsed_date = date.fromisoformat(due_date) if due_date else None
@@ -54,12 +61,13 @@ class CreateTaskTool(BaseTool):
             build_recurrence(recurrence=recurrence) if recurrence else None
         )
         await self.todo_client.save(
+            list_id=list_id,
             title=title,
             due_date=parsed_date,
             recurrence=parsed_recurrence,
         )
-        message = f"Created task: {title}"
+        message = f"Created task: {title}."
         return message, message
 
-    def _run(self, title: str, **_kwargs) -> str:
+    def _run(self, **_kwargs) -> str:
         raise SyncRunNotImplemented()

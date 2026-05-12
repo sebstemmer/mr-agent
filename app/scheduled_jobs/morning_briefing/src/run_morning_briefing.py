@@ -1,6 +1,6 @@
 import asyncio
 
-from agent.tasks.format_task import format_task
+from agent.tasks.src.format_task import format_task
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
 from job_search.src.get_interesting_jobs import GetInterestingJobs
 from job_search.src.refresh_jobs import RefreshJobs
@@ -15,6 +15,7 @@ class RunMorningBriefing:
         self,
         greeting: str,
         weather_location: str,
+        personal_todo_list_id: str,
         refresh_jobs: RefreshJobs,
         get_interesting_jobs: GetInterestingJobs,
         get_weather: GetWeather,
@@ -23,6 +24,7 @@ class RunMorningBriefing:
     ):
         self._greeting = greeting
         self._weather_location = weather_location
+        self._personal_todo_list_id = personal_todo_list_id
         self._refresh_jobs = refresh_jobs
         self._get_interesting_jobs = get_interesting_jobs
         self._get_weather = get_weather
@@ -35,6 +37,7 @@ class RunMorningBriefing:
         weather, tasks, jobs = await asyncio.gather(
             self._get_weather.get(location=self._weather_location, day=0),
             self._todo_client.find_by_status_and_due_date_between_inclusive(
+                list_id=self._personal_todo_list_id,
                 status=TaskStatus.NOT_STARTED,
                 due_from=today,
                 due_to=today,

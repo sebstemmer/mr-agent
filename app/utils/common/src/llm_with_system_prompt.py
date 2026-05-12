@@ -18,13 +18,18 @@ class LlmWithSystemPrompt:
     ):
         self._system_prompt = system_prompt
         self._additional_instructions = additional_instructions or []
+
         # noinspection PyTypeChecker
         llm = ChatOpenAI(api_key=api_key, model=model)
-        self._bound_llm = llm.bind_tools(
-            tools,
-            tool_choice=tool_choice,
-            parallel_tool_calls=parallel_tool_calls,
-        )
+
+        if len(tools) > 0:
+            self._bound_llm = llm.bind_tools(
+                tools,
+                tool_choice=tool_choice,
+                parallel_tool_calls=parallel_tool_calls,
+            )
+        else:
+            self._bound_llm = llm
 
     async def ainvoke(
         self,

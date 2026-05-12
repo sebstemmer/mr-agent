@@ -3,127 +3,166 @@ from logging import Logger
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import Send
 
-from agent.agent.src.router_node import RouterNode
-from agent.common.sequential_tool_execution_state import (
-    AppendHumanToolResponseToResponsesAction,
-    ExecuteToolCallsState,
-    SequentialToolExecutionState,
-    reduce_execute_tool_calls_with_append_human_tool_response_to_responses,
-    route_by_sequential_tool_execution_state,
+from agent.agent.src.node.merge_readable_tool_messages_node import (
+    MergeReadableToolMessagesNode,
 )
-from agent.common.text_response_node import TextResponseNode
-from agent.job_search.src.handle_job_search_node import HandleJobSearchNode
-from agent.job_search.src.handle_job_search_tool import TOOL_NAME as _JOB_SEARCH
-from agent.state.agent_state import (
-    SEQUENTIAL_TOOL_EXECUTION_STATE_KEY,
+from agent.agent.src.node.planner_node import PlannerNode
+from agent.agent.src.state.agent_state import (
     AgentState,
-    get_sequential_tool_execution_state,
+    BaseState,
+    ExecuteToolCallsState,
 )
-from agent.tasks.create_tasks_subgraph import CreateTasksSubgraph
-from agent.tasks.personal_task_list_tool import TOOL_NAME as _TASKS
-from agent.weather.src.handle_weather_node import HandleWeatherNode
-from agent.weather.src.handle_weather_tool import TOOL_NAME as _WEATHER
-
-_ROUTER = "router"
-_TEXT_RESPONSE = "text_response"
+from agent.agent.src.state.create_execute_tool_call_state import (
+    CreateExecuteToolCallState,
+)
+from agent.agent.src.tool_registry import ToolRegistry
+from agent.job_search.src.get_jobs_node import GetJobsNode
+from agent.job_search.src.get_jobs_tool import TOOL_NAME as _GET_JOBS_TOOL_NAME
+from agent.job_search.src.job_search_status_node import JobSearchStatusNode
+from agent.job_search.src.job_search_status_tool import (
+    TOOL_NAME as _JOB_SEARCH_STATUS_TOOL_NAME,
+)
+from agent.job_search.src.like_job_node import LikeJobNode
+from agent.job_search.src.like_job_tool import TOOL_NAME as _LIKE_JOB_TOOL_NAME
+from agent.tasks.src.create_task.create_task_node import CreateTaskNode
+from agent.tasks.src.create_task.create_task_tool import (
+    TOOL_NAME as _CREATE_TASK_TOOL_NAME,
+)
+from agent.tasks.src.delete_task.delete_task_node import DeleteTaskNode
+from agent.tasks.src.delete_task.delete_task_tool import (
+    TOOL_NAME as _DELETE_TASK_TOOL_NAME,
+)
+from agent.tasks.src.get_tasks.get_tasks_node import GetTasksNode
+from agent.tasks.src.get_tasks.get_tasks_tool import (
+    TOOL_NAME as _GET_TASKS_TOOL_NAME,
+)
+from agent.tasks.src.update_task.update_task_node import UpdateTaskNode
+from agent.tasks.src.update_task.update_task_tool import (
+    TOOL_NAME as _UPDATE_TASK_TOOL_NAME,
+)
+from agent.weather.src.get_weather_node import GetWeatherNode
+from agent.weather.src.get_weather_tool import TOOL_NAME as _GET_WEATHER_TOOL_NAME
 
 
 class CreateAgent:
+    _PLANNER_NODE_NAME = "planner"
+    _MERGE_READABLE_TOOL_MESSAGES_NODE_NAME = "merge_readable_tool_messages"
+
     def __init__(
         self,
-        router_node: RouterNode,
-        text_response_node: TextResponseNode,
-        handle_weather_node: HandleWeatherNode,
-        handle_job_search_node: HandleJobSearchNode,
-        create_tasks_subgraph: CreateTasksSubgraph,
+        planner_node: PlannerNode,
+        get_weather_node: GetWeatherNode,
+        get_tasks_node: GetTasksNode,
+        create_task_node: CreateTaskNode,
+        delete_task_node: DeleteTaskNode,
+        update_task_node: UpdateTaskNode,
+        get_jobs_node: GetJobsNode,
+        like_job_node: LikeJobNode,
+        job_search_status_node: JobSearchStatusNode,
+        merge_readable_tool_messages_node: MergeReadableToolMessagesNode,
+        tool_registry: ToolRegistry,
+        create_execute_tool_call_state: CreateExecuteToolCallState,
         logger: Logger,
     ):
-        self._router_node = router_node
-        self._text_response_node = text_response_node
-        self._handle_weather_node = handle_weather_node
-        self._handle_job_search_node = handle_job_search_node
-        self._create_tasks_subgraph = create_tasks_subgraph
+        self._planner_node = planner_node
+        self._get_weather_node = get_weather_node
+        self._get_tasks_node = get_tasks_node
+        self._create_task_node = create_task_node
+        self._delete_task_node = delete_task_node
+        self._update_task_node = update_task_node
+        self._get_jobs_node = get_jobs_node
+        self._like_job_node = like_job_node
+        self._job_search_status_node = job_search_status_node
+        self._merge_readable_tool_messages_node = merge_readable_tool_messages_node
+        self._tool_registry = tool_registry
+        self._create_execute_tool_call_state = create_execute_tool_call_state
         self._logger = logger
 
-    def _route_after_router(self, state: AgentState) -> str:
-        return route_by_sequential_tool_execution_state(
-            substate=get_sequential_tool_execution_state(
-                state=state,
-                expected_type=SequentialToolExecutionState,
-            ),
-            text_response_node_name=_TEXT_RESPONSE,
-            logger=self._logger,
-        )
-
-    def _append_to_human_tool_responses(self, state: AgentState, response: str) -> dict:
-        substate = get_sequential_tool_execution_state(
-            state=state, expected_type=ExecuteToolCallsState
-        )
-        return {
-            SEQUENTIAL_TOOL_EXECUTION_STATE_KEY: reduce_execute_tool_calls_with_append_human_tool_response_to_responses(
-                state=substate,
-                action=AppendHumanToolResponseToResponsesAction(
-                    response=response,
-                ),
-                logger=self._logger,
-            ),
-        }
-
     def create(self) -> CompiledStateGraph:
-        tasks_subgraph = self._create_tasks_subgraph.create()
-
-        async def _weather(state: AgentState) -> dict:
-            result = await self._handle_weather_node.handle(
-                messages=state["messages"],
-            )
-            content = result["messages"][0].content
-            return {
-                "messages": result["messages"],
-                **self._append_to_human_tool_responses(state=state, response=content),
-            }
-
-        async def _job_search(state: AgentState) -> dict:
-            result = await self._handle_job_search_node.handle(
-                messages=state["messages"],
-            )
-            content = result["messages"][0].content
-            return {
-                "messages": result["messages"],
-                **self._append_to_human_tool_responses(state=state, response=content),
-            }
-
-        async def _tasks(state: AgentState) -> dict:
-            result = await tasks_subgraph.ainvoke(state)
-            last_message = result["messages"][-1]
-            return {
-                "messages": result["messages"],
-                **self._append_to_human_tool_responses(
-                    state=state, response=last_message.content
-                ),
-            }
-
-        memory = MemorySaver()
-
         # noinspection PyTypeChecker
         graph = StateGraph(AgentState)
 
         # noinspection PyTypeChecker
-        graph.add_node(_ROUTER, self._router_node.route)
+        graph.add_node(self._PLANNER_NODE_NAME, self._planner_node.plan)
         # noinspection PyTypeChecker
-        graph.add_node(_TEXT_RESPONSE, self._text_response_node.execute)
+        graph.add_node(
+            self._tool_registry[_GET_WEATHER_TOOL_NAME].node_name,
+            self._get_weather_node.get,
+        )
         # noinspection PyTypeChecker
-        graph.add_node(_WEATHER, _weather)
+        graph.add_node(
+            self._tool_registry[_GET_TASKS_TOOL_NAME].node_name,
+            self._get_tasks_node.get,
+        )
         # noinspection PyTypeChecker
-        graph.add_node(_JOB_SEARCH, _job_search)
+        graph.add_node(
+            self._tool_registry[_CREATE_TASK_TOOL_NAME].node_name,
+            self._create_task_node.create,
+        )
         # noinspection PyTypeChecker
-        graph.add_node(_TASKS, _tasks)
+        graph.add_node(
+            self._tool_registry[_DELETE_TASK_TOOL_NAME].node_name,
+            self._delete_task_node.delete,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_UPDATE_TASK_TOOL_NAME].node_name,
+            self._update_task_node.update,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_GET_JOBS_TOOL_NAME].node_name,
+            self._get_jobs_node.get,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_LIKE_JOB_TOOL_NAME].node_name,
+            self._like_job_node.like,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_JOB_SEARCH_STATUS_TOOL_NAME].node_name,
+            self._job_search_status_node.get,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._MERGE_READABLE_TOOL_MESSAGES_NODE_NAME,
+            self._merge_readable_tool_messages_node.merge,
+        )
 
-        graph.add_edge(START, _ROUTER)
-        graph.add_conditional_edges(_ROUTER, self._route_after_router)
-        graph.add_edge(_TEXT_RESPONSE, END)
+        graph.add_edge(START, self._PLANNER_NODE_NAME)
 
-        for node in (_WEATHER, _JOB_SEARCH, _TASKS):
-            graph.add_edge(node, _ROUTER)
+        graph.add_conditional_edges(self._PLANNER_NODE_NAME, self._route_after_planner)
 
-        return graph.compile(checkpointer=memory)
+        for entry in self._tool_registry.values():
+            graph.add_edge(
+                entry.node_name, self._MERGE_READABLE_TOOL_MESSAGES_NODE_NAME
+            )
+
+        graph.add_edge(
+            self._MERGE_READABLE_TOOL_MESSAGES_NODE_NAME, self._PLANNER_NODE_NAME
+        )
+
+        return graph.compile(checkpointer=MemorySaver())
+
+    async def _route_after_planner(self, agent_state: AgentState) -> str | list[Send]:
+        state = agent_state["state"]
+
+        if isinstance(state, ExecuteToolCallsState):
+            return [
+                Send(
+                    self._tool_registry[call["name"]].node_name,
+                    {
+                        "state": await self._create_execute_tool_call_state.create(
+                            call=call,
+                        )
+                    },
+                )
+                for call in state.calls
+            ]
+        if isinstance(state, BaseState):
+            return END
+
+        raise ValueError(f"Unexpected state: {type(state).__name__}")

@@ -8,12 +8,16 @@ from microsoft_todo.src.task_status import TaskStatus
 from pydantic import BaseModel, Field
 from utils.common.src.sync_run_not_implemented import SyncRunNotImplemented
 
-from agent.tasks.format_task import format_task
+from agent.tasks.src.format_task import format_task
+from agent.tasks.src.task_lists import AVAILABLE_LISTS
 
-_TOOL_NAME = "get_tasks"
+TOOL_NAME = "get_tasks"
 
 
 class GetTasksInput(BaseModel):
+    list_name: str = Field(
+        description=f"Name of the task list to fetch from. Available: {AVAILABLE_LISTS}.",
+    )
     status: str = Field(
         default=TaskStatus.NOT_STARTED,
         description=(
@@ -39,24 +43,30 @@ class GetTasksInput(BaseModel):
 
 
 class GetTasksTool(BaseTool):
-    name: str = _TOOL_NAME
-    description: str = "Gets tasks from the user's personal todo list. Can filter by status and due date range."
+    name: str = TOOL_NAME
+    description: str = (
+        "Gets tasks from a task list. Can filter by status and due date range."
+    )
     args_schema: Type[BaseModel] = GetTasksInput
     response_format: str = "content_and_artifact"
     todo_client: MicrosoftTodoClient
+    list_name_to_id: dict[str, str]
 
     class Config:
         arbitrary_types_allowed = True
 
     async def _arun(
         self,
-        status: str,
+        list_name: str,
+        status: str = TaskStatus.NOT_STARTED,
         due_from: str | None = None,
         due_to: str | None = None,
     ) -> tuple[str, str]:
+        list_id = self.list_name_to_id[list_name]
         parsed_from = date.fromisoformat(due_from) if due_from else None
         parsed_to = date.fromisoformat(due_to) if due_to else None
         tasks = await self.todo_client.find_by_status_and_due_date_between_inclusive(
+            list_id=list_id,
             status=TaskStatus(status),
             due_from=parsed_from,
             due_to=parsed_to,
