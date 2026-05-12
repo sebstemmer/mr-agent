@@ -3,6 +3,7 @@ from logging import Logger
 from langchain_core.messages import ToolMessage
 from utils.common.src.confirm import confirm
 
+from agent_v2.agent.src.invoke_tool import invoke_tool
 from agent_v2.agent.src.state.agent_state import AgentState, ExecuteToolCallState
 from agent_v2.agent.src.state.dispatch_executed_tool_action import (
     DispatchExecutedToolAction,
@@ -33,18 +34,19 @@ class DeleteTaskNode:
         if not confirm(question=f"Delete task '{args.title}'?"):
             return {
                 "state": await self._dispatch_executed_tool_action.dispatch(
-                    call=state.call,
-                    tool_message=f"User declined deletion of task {args.task_id}.",
+                    tool_message=ToolMessage(
+                        content=f"User declined deletion of task {args.task_id}.",
+                        tool_call_id=state.call["id"],
+                    ),
                     readable_tool_message=f"Deletion of '{args.title}' declined.",
                 ),
             }
 
-        result = await self._delete_task_tool.ainvoke(input=state.call)
-
         return {
-            "state": await self._dispatch_executed_tool_action.dispatch(
+            "state": await invoke_tool(
+                tool=self._delete_task_tool,
                 call=state.call,
-                tool_message=result.content,
-                readable_tool_message=result.artifact,
+                dispatch_executed_tool_action=self._dispatch_executed_tool_action,
+                error_message="Failed to delete task.",
             ),
         }

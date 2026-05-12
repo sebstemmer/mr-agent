@@ -1,5 +1,6 @@
 from logging import Logger
 
+from agent_v2.agent.src.invoke_tool import invoke_tool
 from agent_v2.agent.src.state.agent_state import AgentState, ExecuteToolCallState
 from agent_v2.agent.src.state.dispatch_executed_tool_action import (
     DispatchExecutedToolAction,
@@ -25,12 +26,11 @@ class GetJobsNode:
         if not isinstance(state, ExecuteToolCallState):
             raise UnexpectedStateError(expected=ExecuteToolCallState, actual=state)
 
-        result = await self._get_jobs_tool.ainvoke(input=state.call)
-
         return {
-            "state": await self._dispatch_executed_tool_action.dispatch(
+            "state": await invoke_tool(
+                tool=self._get_jobs_tool,
                 call=state.call,
-                tool_message=result.content,
-                readable_tool_message=result.artifact,
+                dispatch_executed_tool_action=self._dispatch_executed_tool_action,
+                error_message="Failed to get jobs.",
             ),
         }

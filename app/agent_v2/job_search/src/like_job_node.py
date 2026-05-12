@@ -1,7 +1,9 @@
 from logging import Logger
 
+from langchain_core.messages import ToolMessage
 from utils.common.src.confirm import confirm
 
+from agent_v2.agent.src.invoke_tool import invoke_tool
 from agent_v2.agent.src.state.agent_state import AgentState, ExecuteToolCallState
 from agent_v2.agent.src.state.dispatch_executed_tool_action import (
     DispatchExecutedToolAction,
@@ -32,18 +34,19 @@ class LikeJobNode:
         if not confirm(question=f"Like job {args.public_id}?"):
             return {
                 "state": await self._dispatch_executed_tool_action.dispatch(
-                    call=state.call,
-                    tool_message=f"User declined liking job {args.public_id}.",
+                    tool_message=ToolMessage(
+                        content=f"User declined liking job {args.public_id}.",
+                        tool_call_id=state.call["id"],
+                    ),
                     readable_tool_message=f"Skipped liking job {args.public_id}.",
                 ),
             }
 
-        result = await self._like_job_tool.ainvoke(input=state.call)
-
         return {
-            "state": await self._dispatch_executed_tool_action.dispatch(
+            "state": await invoke_tool(
+                tool=self._like_job_tool,
                 call=state.call,
-                tool_message=result.content,
-                readable_tool_message=result.artifact,
+                dispatch_executed_tool_action=self._dispatch_executed_tool_action,
+                error_message="Failed to like job.",
             ),
         }
