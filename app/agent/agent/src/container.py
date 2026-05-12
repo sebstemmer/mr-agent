@@ -47,18 +47,19 @@ from agent.weather.src.get_weather_tool import TOOL_NAME as _GET_WEATHER_TOOL_NA
 
 SYSTEM_PROMPT = (
     "You are a personal assistant. Today is {today}. "
-    "After all tools have finished, do not repeat or summarize the tool results. "
-    "If there is nothing new to add, just say 'Done'."
+    "Tool results are automatically shown to the user. "
+    "Never repeat, summarize, or rephrase tool results. "
+    "If you have nothing to add beyond what the tools returned, respond with 'Done'."
 )
 
 
-class AgentV2Container(containers.DeclarativeContainer):
+class AgentContainer(containers.DeclarativeContainer):
     weather_container: WeatherContainer = providers.DependenciesContainer()
     microsoft_todo_container: MicrosoftTodoContainer = providers.DependenciesContainer()
     job_search_container: JobSearchContainer = providers.DependenciesContainer()
     send_message = providers.Dependency()
 
-    _logger = providers.Singleton(logging.getLogger, "agent_v2")
+    _logger = providers.Singleton(logging.getLogger, "agent")
 
     _dispatch_executed_tool_action = providers.Singleton(
         DispatchExecutedToolAction,
