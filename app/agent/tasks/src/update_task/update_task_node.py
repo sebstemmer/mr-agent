@@ -32,5 +32,6 @@ class UpdateTaskNode:
                 call=state.call,
                 dispatch_executed_tool_action=self._dispatch_executed_tool_action,
                 error_message="Failed to update task.",
+                logger=self._logger,
             ),
         }

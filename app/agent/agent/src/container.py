@@ -1,10 +1,11 @@
 import logging
 
 from dependency_injector import containers, providers
+from files.src.container import FilesContainer
 from job_search.src.container import JobSearchContainer
 from microsoft_todo.src.container import MicrosoftTodoContainer
 from utils.common.src.config import settings
-from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
+from utils.common.src.llm import CHAT_GPT_5_4_MODEL
 from weather.src.container import WeatherContainer
 
 from agent.agent.src.create_agent import CreateAgent
@@ -24,6 +25,9 @@ from agent.agent.src.state.dispatch_respond_with_text_action import (
 )
 from agent.agent.src.tool_registry import ToolRegistryEntry
 from agent.job_search.src.container import JobSearchAgentContainer
+from agent.job_search.src.create_job_opening_tool import (
+    TOOL_NAME as _CREATE_JOB_OPENING_TOOL_NAME,
+)
 from agent.job_search.src.get_jobs_tool import TOOL_NAME as _GET_JOBS_TOOL_NAME
 from agent.job_search.src.job_search_status_tool import (
     TOOL_NAME as _JOB_SEARCH_STATUS_TOOL_NAME,
@@ -49,7 +53,8 @@ SYSTEM_PROMPT = (
     "You are a personal assistant. Today is {today}. "
     "Tool results are automatically shown to the user. "
     "Never repeat, summarize, or rephrase tool results. "
-    "If you have nothing to add beyond what the tools returned, respond with 'Done'."
+    "If you have nothing to add beyond what the tools returned, respond with 'Done'. "
+    "If a tool returns an error, respond with 'An error occurred, please try again.'"
 )
 
 
@@ -57,6 +62,7 @@ class AgentContainer(containers.DeclarativeContainer):
     weather_container: WeatherContainer = providers.DependenciesContainer()
     microsoft_todo_container: MicrosoftTodoContainer = providers.DependenciesContainer()
     job_search_container: JobSearchContainer = providers.DependenciesContainer()
+    files_container: FilesContainer = providers.DependenciesContainer()
     send_message = providers.Dependency()
 
     _logger = providers.Singleton(logging.getLogger, "agent")
@@ -88,13 +94,73 @@ class AgentContainer(containers.DeclarativeContainer):
     job_search_agent_container = providers.Container(
         JobSearchAgentContainer,
         job_search_container=job_search_container,
+        files_container=files_container,
         dispatch_executed_tool_action=_dispatch_executed_tool_action,
+    )
+
+    _tool_registry = providers.Dict(
+        {
+            _GET_WEATHER_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="get_weather",
+                display_name="Get Weather Tool",
+                parallel=True,
+            ),
+            _GET_TASKS_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="get_tasks",
+                display_name="Get Tasks Tool",
+                parallel=True,
+            ),
+            _CREATE_TASK_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="create_task",
+                display_name="Create Task Tool",
+                parallel=True,
+            ),
+            _DELETE_TASK_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="delete_task",
+                display_name="Delete Task Tool",
+                parallel=True,
+            ),
+            _UPDATE_TASK_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="update_task",
+                display_name="Update Task Tool",
+                parallel=True,
+            ),
+            _GET_JOBS_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="get_jobs",
+                display_name="Get Jobs Tool",
+                parallel=True,
+            ),
+            _LIKE_JOB_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="like_job",
+                display_name="Like Job Tool",
+                parallel=True,
+            ),
+            _JOB_SEARCH_STATUS_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="job_search_status",
+                display_name="Job Search Status Tool",
+                parallel=True,
+            ),
+            _CREATE_JOB_OPENING_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="create_job_opening",
+                display_name="Create Job Opening Tool",
+                parallel=False,
+            ),
+        }
     )
 
     planner_node = providers.Singleton(
         PlannerNode,
         api_key=settings.OPENAI_API_KEY,
-        model=CHAT_GPT_5_4_MINI_MODEL,
+        model=CHAT_GPT_5_4_MODEL,
         system_prompt=SYSTEM_PROMPT,
         tools=providers.List(
             weather_agent_container.get_weather_tool,
@@ -105,54 +171,11 @@ class AgentContainer(containers.DeclarativeContainer):
             job_search_agent_container.get_jobs_tool,
             job_search_agent_container.like_job_tool,
             job_search_agent_container.job_search_status_tool,
+            job_search_agent_container.create_job_opening_tool,
         ),
+        tool_registry=_tool_registry,
         logger=_logger,
         dispatch_respond_with_text_action=_dispatch_respond_with_text_action,
-    )
-
-    _tool_registry = providers.Dict(
-        {
-            _GET_WEATHER_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="get_weather",
-                display_name="Get Weather Tool",
-            ),
-            _GET_TASKS_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="get_tasks",
-                display_name="Get Tasks Tool",
-            ),
-            _CREATE_TASK_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="create_task",
-                display_name="Create Task Tool",
-            ),
-            _DELETE_TASK_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="delete_task",
-                display_name="Delete Task Tool",
-            ),
-            _UPDATE_TASK_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="update_task",
-                display_name="Update Task Tool",
-            ),
-            _GET_JOBS_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="get_jobs",
-                display_name="Get Jobs Tool",
-            ),
-            _LIKE_JOB_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="like_job",
-                display_name="Like Job Tool",
-            ),
-            _JOB_SEARCH_STATUS_TOOL_NAME: providers.Singleton(
-                ToolRegistryEntry,
-                node_name="job_search_status",
-                display_name="Job Search Status Tool",
-            ),
-        }
     )
 
     _merge_readable_tool_messages_node = providers.Singleton(
@@ -178,6 +201,7 @@ class AgentContainer(containers.DeclarativeContainer):
         get_jobs_node=job_search_agent_container.get_jobs_node,
         like_job_node=job_search_agent_container.like_job_node,
         job_search_status_node=job_search_agent_container.job_search_status_node,
+        create_job_opening_node=job_search_agent_container.create_job_opening_node,
         merge_readable_tool_messages_node=_merge_readable_tool_messages_node,
         tool_registry=_tool_registry,
         create_execute_tool_call_state=_create_execute_tool_call_state,

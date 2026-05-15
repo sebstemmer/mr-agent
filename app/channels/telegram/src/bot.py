@@ -7,7 +7,13 @@ from telegram.ext import (
 
 class TelegramBot:
     def __init__(self, token: str, handle_init: HandleTelegramInit):
-        self._app = ApplicationBuilder().token(token).build()
+        self._app = (
+            ApplicationBuilder()
+            .token(token)
+            .read_timeout(30)
+            .write_timeout(30)
+            .build()
+        )
         self._app.add_handler(CommandHandler("init", handle_init.handle))
 
     @property

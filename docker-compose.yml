@@ -21,6 +21,8 @@ services:
     env_file: .env
     ports:
       - "127.0.0.1:8000:8000"
+    volumes:
+      - file-storage:${FILE_STORAGE_DIR}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -34,3 +36,4 @@ services:
 
 volumes:
   postgres-data:
+  file-storage:

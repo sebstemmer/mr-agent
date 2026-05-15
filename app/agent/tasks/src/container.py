@@ -19,7 +19,7 @@ class TasksAgentContainer(containers.DeclarativeContainer):
     microsoft_todo_container: MicrosoftTodoContainer = providers.DependenciesContainer()
     dispatch_executed_tool_action = providers.Dependency()
 
-    _logger = providers.Singleton(logging.getLogger, "agent_v2.tasks")
+    _logger = providers.Singleton(logging.getLogger, "agent.tasks")
 
     _list_name_to_id = providers.Dict(
         {

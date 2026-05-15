@@ -10,3 +10,4 @@ venv
 ansible/github.pub
 ansible/inventory.yml
 *.db
+data/

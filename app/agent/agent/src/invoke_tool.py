@@ -1,6 +1,10 @@
+from collections.abc import Awaitable, Callable
+from logging import Logger
+
 from langchain_core.messages import ToolMessage
 from langchain_core.messages.tool import ToolCall
 from langchain_core.tools import BaseTool
+from langgraph.errors import GraphBubbleUp
 
 from agent.agent.src.state.agent_state import ExecutedToolAction
 from agent.agent.src.state.dispatch_executed_tool_action import (
@@ -13,10 +17,17 @@ async def invoke_tool(
     call: ToolCall,
     dispatch_executed_tool_action: DispatchExecutedToolAction,
     error_message: str,
+    logger: Logger,
+    on_error: Callable[[], Awaitable[None]] | None = None,
 ) -> ExecutedToolAction:
     try:
         result = await tool.ainvoke(input=call)
-    except Exception:
+    except GraphBubbleUp:
+        raise
+    except Exception as e:
+        logger.error("Tool '%s' failed: %s", call["name"], e)
+        if on_error:
+            await on_error()
         return await dispatch_executed_tool_action.dispatch(
             tool_message=ToolMessage(
                 content=error_message,

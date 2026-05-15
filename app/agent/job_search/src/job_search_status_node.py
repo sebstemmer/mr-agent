@@ -32,5 +32,6 @@ class JobSearchStatusNode:
                 call=state.call,
                 dispatch_executed_tool_action=self._dispatch_executed_tool_action,
                 error_message="Failed to get job search status.",
+                logger=self._logger,
             ),
         }

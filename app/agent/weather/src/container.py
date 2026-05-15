@@ -19,5 +19,5 @@ class WeatherAgentContainer(containers.DeclarativeContainer):
         GetWeatherNode,
         get_weather_tool=get_weather_tool,
         dispatch_executed_tool_action=dispatch_executed_tool_action,
-        logger=providers.Singleton(logging.getLogger, "agent_v2.weather"),
+        logger=providers.Singleton(logging.getLogger, "agent.weather"),
     )

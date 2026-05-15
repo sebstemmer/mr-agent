@@ -8,16 +8,14 @@ import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from utils.common.src.config import settings
-from utils.common.src.llm import CHAT_GPT_5_4_MINI_MODEL
+from utils.common.src.llm import CHAT_GPT_5_4_MODEL
 
 from job_search.src.get_job_search_state import GetOrCreateJobSearchState
 from job_search.src.job_model import Job
 from job_search.src.job_repository import JobRepository
 from job_search.src.job_search_state_repository import JobSearchStateRepository
 
-_evaluation_llm = ChatOpenAI(
-    api_key=settings.OPENAI_API_KEY, model=CHAT_GPT_5_4_MINI_MODEL
-)
+_evaluation_llm = ChatOpenAI(api_key=settings.OPENAI_API_KEY, model=CHAT_GPT_5_4_MODEL)
 _evaluation_llm_json = _evaluation_llm.bind(response_format={"type": "json_object"})
 
 _EVALUATION_PROMPT = f"""You are a job posting evaluator. Determine if a job posting is interesting for the user, explain why, and provide a summary.

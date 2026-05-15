@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     MICROSOFT_TODO_LIST_ID: str
     MORNING_BRIEFING_GREETING: str
     MORNING_BRIEFING_WEATHER_LOCATION: str
+    FILE_STORAGE_DIR: str
 
     class Config:
         env_file = ".env"

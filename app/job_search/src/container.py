@@ -3,6 +3,7 @@ from utils.utils.src.container import UtilsContainer
 
 from job_search.src.get_interesting_jobs import GetInterestingJobs
 from job_search.src.get_job_search_state import GetOrCreateJobSearchState
+from job_search.src.job_opening_repository import JobOpeningRepository
 from job_search.src.job_repository import JobRepository
 from job_search.src.job_search_state_repository import JobSearchStateRepository
 from job_search.src.like_job import LikeJob
@@ -12,6 +13,9 @@ from job_search.src.refresh_jobs import RefreshJobs
 class JobSearchContainer(containers.DeclarativeContainer):
     utils_container: UtilsContainer = providers.DependenciesContainer()
 
+    job_opening_repo = providers.Singleton(
+        JobOpeningRepository, session_factory=utils_container.session_factory
+    )
     job_repo = providers.Singleton(
         JobRepository, session_factory=utils_container.session_factory
     )

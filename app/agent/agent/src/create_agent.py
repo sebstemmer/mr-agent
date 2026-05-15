@@ -18,6 +18,10 @@ from agent.agent.src.state.create_execute_tool_call_state import (
     CreateExecuteToolCallState,
 )
 from agent.agent.src.tool_registry import ToolRegistry
+from agent.job_search.src.create_job_opening_node import CreateJobOpeningNode
+from agent.job_search.src.create_job_opening_tool import (
+    TOOL_NAME as _CREATE_JOB_OPENING_TOOL_NAME,
+)
 from agent.job_search.src.get_jobs_node import GetJobsNode
 from agent.job_search.src.get_jobs_tool import TOOL_NAME as _GET_JOBS_TOOL_NAME
 from agent.job_search.src.job_search_status_node import JobSearchStatusNode
@@ -61,6 +65,7 @@ class CreateAgent:
         get_jobs_node: GetJobsNode,
         like_job_node: LikeJobNode,
         job_search_status_node: JobSearchStatusNode,
+        create_job_opening_node: CreateJobOpeningNode,
         merge_readable_tool_messages_node: MergeReadableToolMessagesNode,
         tool_registry: ToolRegistry,
         create_execute_tool_call_state: CreateExecuteToolCallState,
@@ -75,6 +80,7 @@ class CreateAgent:
         self._get_jobs_node = get_jobs_node
         self._like_job_node = like_job_node
         self._job_search_status_node = job_search_status_node
+        self._create_job_opening_node = create_job_opening_node
         self._merge_readable_tool_messages_node = merge_readable_tool_messages_node
         self._tool_registry = tool_registry
         self._create_execute_tool_call_state = create_execute_tool_call_state
@@ -125,6 +131,11 @@ class CreateAgent:
         graph.add_node(
             self._tool_registry[_JOB_SEARCH_STATUS_TOOL_NAME].node_name,
             self._job_search_status_node.get,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_CREATE_JOB_OPENING_TOOL_NAME].node_name,
+            self._create_job_opening_node.create,
         )
         # noinspection PyTypeChecker
         graph.add_node(

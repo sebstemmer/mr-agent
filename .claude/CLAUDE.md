@@ -14,10 +14,5 @@
 - Repositories: Spring Boot-style method names (e.g. `find_by_status`, `save`, `delete_by_id`).
 - Service main method: named after the class verb (e.g. `CreateTasksSubgraph.create()`, `HandleWeatherNode.handle()`).
 
-## Architecture Patterns
-- Redux-style state management in LangGraph subgraphs: states, actions, per-(state, action) reducer functions.
-- Reducer signature: always `(state, action, logger)` — prefix unused params with `_`.
-- Use `get_tasks_substate(state, expected_type)` for typed state access in nodes.
-- Tool node return dicts use `tasks_substate` key (not `router_state`).
-- Parse tool args with typed Pydantic input models (public, not prefixed with `_`).
-- Pass `tool_input=args.model_dump()` to `arun` (dict, not Pydantic model).
+## Environment Variables
+- When adding a new variable to `Settings` in `config.py`, also add it to `.env`, `.env.production`, and `.env.example`.
