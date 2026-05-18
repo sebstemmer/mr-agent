@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 
 from agent.tasks.src.format_task import format_task
 from channels.telegram.src.send_telegram_message import SendTelegramMessage
@@ -11,6 +12,8 @@ from weather.src.get_weather import GetWeather
 
 
 class RunMorningBriefing:
+    _ONE_DAY = timedelta(days=1)
+
     def __init__(
         self,
         greeting: str,
@@ -34,13 +37,19 @@ class RunMorningBriefing:
     async def run(self) -> None:
         today = today_berlin()
 
-        weather, tasks, jobs = await asyncio.gather(
+        weather, tasks, overdue_tasks, jobs = await asyncio.gather(
             self._get_weather.get(location=self._weather_location, day=0),
             self._todo_client.find_by_status_and_due_date_between_inclusive(
                 list_id=self._personal_todo_list_id,
                 status=TaskStatus.NOT_STARTED,
                 due_from=today,
                 due_to=today,
+            ),
+            self._todo_client.find_by_status_and_due_date_between_inclusive(
+                list_id=self._personal_todo_list_id,
+                status=TaskStatus.NOT_STARTED,
+                due_from=None,
+                due_to=today - self._ONE_DAY,
             ),
             self._refresh_and_get_jobs(today=today),
         )
@@ -49,6 +58,7 @@ class RunMorningBriefing:
         sections = [
             self._greeting,
             f"*Weather*\n\n{weather}",
+            self._format_overdue_tasks_section(tasks=overdue_tasks),
             self._format_tasks_section(tasks=tasks),
             f"*Jobs*\n\n{len(jobs)} new interesting jobs found today.",
         ]
@@ -62,6 +72,16 @@ class RunMorningBriefing:
             start_date=today,
             end_date=today,
         )
+
+    @staticmethod
+    def _format_overdue_tasks_section(tasks: list[dict]) -> str:
+        if not tasks:
+            return "*Overdue Tasks*\n\nNo overdue tasks."
+        lines = [
+            f"{index}. {format_task(task=task)}"
+            for index, task in enumerate(tasks, start=1)
+        ]
+        return "*Overdue Tasks*\n\n" + "\n".join(lines)
 
     @staticmethod
     def _format_tasks_section(tasks: list[dict]) -> str:
