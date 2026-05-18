@@ -18,9 +18,25 @@ from agent.agent.src.state.create_execute_tool_call_state import (
     CreateExecuteToolCallState,
 )
 from agent.agent.src.tool_registry import ToolRegistry
+from agent.job_search.src.apply_job_opening_node import ApplyJobOpeningNode
+from agent.job_search.src.apply_job_opening_tool import (
+    TOOL_NAME as _APPLY_JOB_OPENING_TOOL_NAME,
+)
 from agent.job_search.src.create_job_opening_node import CreateJobOpeningNode
 from agent.job_search.src.create_job_opening_tool import (
     TOOL_NAME as _CREATE_JOB_OPENING_TOOL_NAME,
+)
+from agent.job_search.src.delete_job_opening_node import DeleteJobOpeningNode
+from agent.job_search.src.delete_job_opening_tool import (
+    TOOL_NAME as _DELETE_JOB_OPENING_TOOL_NAME,
+)
+from agent.job_search.src.get_job_opening_details_node import GetJobOpeningDetailsNode
+from agent.job_search.src.get_job_opening_details_tool import (
+    TOOL_NAME as _GET_JOB_OPENING_DETAILS_TOOL_NAME,
+)
+from agent.job_search.src.get_job_openings_node import GetJobOpeningsNode
+from agent.job_search.src.get_job_openings_tool import (
+    TOOL_NAME as _GET_JOB_OPENINGS_TOOL_NAME,
 )
 from agent.job_search.src.get_jobs_node import GetJobsNode
 from agent.job_search.src.get_jobs_tool import TOOL_NAME as _GET_JOBS_TOOL_NAME
@@ -66,6 +82,10 @@ class CreateAgent:
         like_job_node: LikeJobNode,
         job_search_status_node: JobSearchStatusNode,
         create_job_opening_node: CreateJobOpeningNode,
+        get_job_openings_node: GetJobOpeningsNode,
+        get_job_opening_details_node: GetJobOpeningDetailsNode,
+        delete_job_opening_node: DeleteJobOpeningNode,
+        apply_job_opening_node: ApplyJobOpeningNode,
         merge_readable_tool_messages_node: MergeReadableToolMessagesNode,
         tool_registry: ToolRegistry,
         create_execute_tool_call_state: CreateExecuteToolCallState,
@@ -81,6 +101,10 @@ class CreateAgent:
         self._like_job_node = like_job_node
         self._job_search_status_node = job_search_status_node
         self._create_job_opening_node = create_job_opening_node
+        self._get_job_openings_node = get_job_openings_node
+        self._get_job_opening_details_node = get_job_opening_details_node
+        self._delete_job_opening_node = delete_job_opening_node
+        self._apply_job_opening_node = apply_job_opening_node
         self._merge_readable_tool_messages_node = merge_readable_tool_messages_node
         self._tool_registry = tool_registry
         self._create_execute_tool_call_state = create_execute_tool_call_state
@@ -136,6 +160,26 @@ class CreateAgent:
         graph.add_node(
             self._tool_registry[_CREATE_JOB_OPENING_TOOL_NAME].node_name,
             self._create_job_opening_node.create,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_GET_JOB_OPENINGS_TOOL_NAME].node_name,
+            self._get_job_openings_node.get,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_GET_JOB_OPENING_DETAILS_TOOL_NAME].node_name,
+            self._get_job_opening_details_node.get,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_DELETE_JOB_OPENING_TOOL_NAME].node_name,
+            self._delete_job_opening_node.delete,
+        )
+        # noinspection PyTypeChecker
+        graph.add_node(
+            self._tool_registry[_APPLY_JOB_OPENING_TOOL_NAME].node_name,
+            self._apply_job_opening_node.apply,
         )
         # noinspection PyTypeChecker
         graph.add_node(

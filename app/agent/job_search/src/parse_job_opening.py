@@ -11,6 +11,9 @@ _SYSTEM_PROMPT = (
     "For the summary, include: what the product/project is about "
     "and the key tasks and responsibilities. "
     "For requirements, extract the qualifications, experience, and skills required for the role. "
+    "For rating, rate the job 1 (not interesting), 2 (somewhat interesting), or 3 (very interesting) "
+    "based on the following criteria: {rating_prompt} "
+    "For rating_reason, briefly explain why you gave this rating. "
     "For link_to_company, extract the company website URL if present."
 )
 
@@ -20,6 +23,8 @@ class ParsedJobOpening(BaseModel):
     summary: str
     requirements: str
     link_to_company: str | None
+    rating: int
+    rating_reason: str
 
 
 class ParseJobOpening:
@@ -28,9 +33,12 @@ class ParseJobOpening:
             api_key=settings.OPENAI_API_KEY,
             model=CHAT_GPT_5_4_MINI_MODEL,
         ).with_structured_output(ParsedJobOpening)
+        self._system_prompt = _SYSTEM_PROMPT.format(
+            rating_prompt=settings.JOB_OPENING_RATING_PROMPT,
+        )
 
     async def parse(self, html: str) -> ParsedJobOpening:
         text = BeautifulSoup(html, "html.parser").get_text(separator="\n", strip=True)
         return await self._llm.ainvoke(
-            [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=text)],
+            [SystemMessage(content=self._system_prompt), HumanMessage(content=text)],
         )

@@ -1,3 +1,4 @@
+import uuid
 from typing import Type
 
 from files.src.delete_file import DeleteFile
@@ -53,6 +54,10 @@ class CreateJobOpeningTool(BaseTool):
             f"{parsed.requirements}\n\n"
             f"*Company link*\n"
             f"{parsed.link_to_company}\n\n"
+            f"*Rating*\n"
+            f"{parsed.rating}/3\n\n"
+            f"*Rating reason*\n"
+            f"{parsed.rating_reason}\n\n"
             f"Save this job opening?"
         )
 
@@ -63,15 +68,20 @@ class CreateJobOpeningTool(BaseTool):
 
         job_opening = await self.job_opening_repo.save(
             job_opening=JobOpening(
+                uuid=str(uuid.uuid4()),
                 title=parsed.title,
                 summary=parsed.summary,
                 requirements=parsed.requirements,
+                rating=parsed.rating,
+                rating_reason=parsed.rating_reason,
                 link_to_company=parsed.link_to_company,
             ),
         )
+        await self.delete_file.delete(uuid=file_uuid)
 
-        result = f"Job opening created (id={job_opening.id})."
-        return result, result
+        context = f"Job opening created (uuid={job_opening.uuid})."
+        readable = f"Job opening '{job_opening.title}' created."
+        return context, readable
 
     def _run(self, file_uuid: str) -> str:
         raise SyncRunNotImplemented()

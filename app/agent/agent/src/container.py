@@ -25,8 +25,20 @@ from agent.agent.src.state.dispatch_respond_with_text_action import (
 )
 from agent.agent.src.tool_registry import ToolRegistryEntry
 from agent.job_search.src.container import JobSearchAgentContainer
+from agent.job_search.src.apply_job_opening_tool import (
+    TOOL_NAME as _APPLY_JOB_OPENING_TOOL_NAME,
+)
 from agent.job_search.src.create_job_opening_tool import (
     TOOL_NAME as _CREATE_JOB_OPENING_TOOL_NAME,
+)
+from agent.job_search.src.delete_job_opening_tool import (
+    TOOL_NAME as _DELETE_JOB_OPENING_TOOL_NAME,
+)
+from agent.job_search.src.get_job_opening_details_tool import (
+    TOOL_NAME as _GET_JOB_OPENING_DETAILS_TOOL_NAME,
+)
+from agent.job_search.src.get_job_openings_tool import (
+    TOOL_NAME as _GET_JOB_OPENINGS_TOOL_NAME,
 )
 from agent.job_search.src.get_jobs_tool import TOOL_NAME as _GET_JOBS_TOOL_NAME
 from agent.job_search.src.job_search_status_tool import (
@@ -154,6 +166,30 @@ class AgentContainer(containers.DeclarativeContainer):
                 display_name="Create Job Opening Tool",
                 parallel=False,
             ),
+            _GET_JOB_OPENINGS_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="get_job_openings",
+                display_name="Get Job Openings Tool",
+                parallel=True,
+            ),
+            _GET_JOB_OPENING_DETAILS_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="get_job_opening_details",
+                display_name="Get Job Opening Details Tool",
+                parallel=True,
+            ),
+            _DELETE_JOB_OPENING_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="delete_job_opening",
+                display_name="Delete Job Opening Tool",
+                parallel=False,
+            ),
+            _APPLY_JOB_OPENING_TOOL_NAME: providers.Singleton(
+                ToolRegistryEntry,
+                node_name="apply_job_opening",
+                display_name="Apply Job Opening Tool",
+                parallel=False,
+            ),
         }
     )
 
@@ -172,6 +208,10 @@ class AgentContainer(containers.DeclarativeContainer):
             job_search_agent_container.like_job_tool,
             job_search_agent_container.job_search_status_tool,
             job_search_agent_container.create_job_opening_tool,
+            job_search_agent_container.get_job_openings_tool,
+            job_search_agent_container.get_job_opening_details_tool,
+            job_search_agent_container.delete_job_opening_tool,
+            job_search_agent_container.apply_job_opening_tool,
         ),
         tool_registry=_tool_registry,
         logger=_logger,
@@ -202,6 +242,10 @@ class AgentContainer(containers.DeclarativeContainer):
         like_job_node=job_search_agent_container.like_job_node,
         job_search_status_node=job_search_agent_container.job_search_status_node,
         create_job_opening_node=job_search_agent_container.create_job_opening_node,
+        get_job_openings_node=job_search_agent_container.get_job_openings_node,
+        get_job_opening_details_node=job_search_agent_container.get_job_opening_details_node,
+        delete_job_opening_node=job_search_agent_container.delete_job_opening_node,
+        apply_job_opening_node=job_search_agent_container.apply_job_opening_node,
         merge_readable_tool_messages_node=_merge_readable_tool_messages_node,
         tool_registry=_tool_registry,
         create_execute_tool_call_state=_create_execute_tool_call_state,

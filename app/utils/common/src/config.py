@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     MORNING_BRIEFING_GREETING: str
     MORNING_BRIEFING_WEATHER_LOCATION: str
     FILE_STORAGE_DIR: str
+    JOB_OPENING_RATING_PROMPT: str
 
     class Config:
         env_file = ".env"

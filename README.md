@@ -1,6 +1,6 @@
 # Personal Agentic AI Assistant Built with LangChain
 
-A personal AI assistant you interact with through Telegram using [python-telegram-bot](https://python-telegram-bot.org/). It helps with everyday tasks like managing to-do lists, searching for jobs, checking the weather and sends a morning briefing each day with an overview of what's ahead.
+A personal AI assistant you interact with through Telegram using [python-telegram-bot](https://python-telegram-bot.org/). It helps with everyday tasks like managing to-do lists, searching for jobs, checking the weather, and sends a morning briefing each day with an overview of what's ahead.
 
 Built in Python with [LangChain](https://www.langchain.com/), it implements the agentic loop pattern with tool calling and human-in-the-loop confirmation flows. The project is fully async, running on the event loop with [FastAPI](https://fastapi.tiangolo.com/), and uses dependency injection via [dependency-injector](https://python-dependency-injector.ets-labs.org/) with a clean modular structure. It supports scheduled cron jobs via [APScheduler](https://pypi.org/project/APScheduler/), file uploads, versioned database migrations, and a persistence layer with [SQLModel](https://sqlmodel.tiangolo.com/) and [PostgreSQL](https://www.postgresql.org/). Deployed with [Docker](https://www.docker.com/) and [Ansible](https://docs.ansible.com/) via a [GitHub Actions](https://github.com/features/actions) CI/CD pipeline.
 

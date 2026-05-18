@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 from utils.utils.src.container import UtilsContainer
 
+from job_search.src.apply_job_opening import ApplyJobOpening
 from job_search.src.get_interesting_jobs import GetInterestingJobs
 from job_search.src.get_job_search_state import GetOrCreateJobSearchState
 from job_search.src.job_opening_repository import JobOpeningRepository
@@ -40,4 +41,8 @@ class JobSearchContainer(containers.DeclarativeContainer):
     like_job = providers.Singleton(
         LikeJob,
         job_repo=job_repo,
+    )
+    apply_job_opening = providers.Singleton(
+        ApplyJobOpening,
+        job_opening_repo=job_opening_repo,
     )
