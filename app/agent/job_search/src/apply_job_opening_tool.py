@@ -14,6 +14,7 @@ class ApplyJobOpeningInput(BaseModel):
     applied_at: str = Field(description="The date the user applied in YYYY-MM-DD format.")
     asked_salary: str = Field(description="The salary the user asked for (e.g. '75k', '80-90k').")
     application_file_uuid: str = Field(description="The 'uuid' of the uploaded application PDF file.")
+    link_to_job_opening: str | None = Field(default=None, description="The URL link to the job opening posting, if available.")
 
 
 class ApplyJobOpeningTool(BaseTool):
@@ -30,12 +31,14 @@ class ApplyJobOpeningTool(BaseTool):
         arbitrary_types_allowed = True
 
     async def _arun(
-        self, job_opening_uuid: str, applied_at: str, asked_salary: str, application_file_uuid: str
+        self, job_opening_uuid: str, applied_at: str, asked_salary: str,
+        application_file_uuid: str, link_to_job_opening: str | None = None,
     ) -> tuple[str, str]:
         job_opening = await self.apply_job_opening.apply(
             uuid=job_opening_uuid,
             applied_at=date.fromisoformat(applied_at),
             asked_salary=asked_salary,
+            link_to_job_opening=link_to_job_opening,
             application_file_uuid=application_file_uuid,
         )
         context = f"Applied for job opening {job_opening.uuid}."

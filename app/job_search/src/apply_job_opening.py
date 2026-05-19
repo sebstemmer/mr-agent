@@ -14,6 +14,7 @@ class ApplyJobOpening:
         applied_at: date,
         asked_salary: str,
         application_file_uuid: str,
+        link_to_job_opening: str | None = None,
     ) -> JobOpening:
         job_opening = await self._job_opening_repo.find_by_uuid(uuid=uuid)
         if job_opening is None:
@@ -23,5 +24,6 @@ class ApplyJobOpening:
         job_opening.applied_at = applied_at
         job_opening.asked_salary = asked_salary
         job_opening.application_file_uuid = application_file_uuid
+        job_opening.link_to_job_opening = link_to_job_opening
 
         return await self._job_opening_repo.save(job_opening=job_opening)

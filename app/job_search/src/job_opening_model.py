@@ -11,6 +11,7 @@ class JobOpening(SQLModel, table=True):
     summary: str
     requirements: str
     link_to_company: str | None = Field(default=None)
+    link_to_job_opening: str | None = Field(default=None)
     rating: int
     rating_reason: str
     applied: bool = Field(default=False)

@@ -49,7 +49,9 @@ class GetJobOpeningDetailsTool(BaseTool):
             f"*Asked salary*\n"
             f"{opening.asked_salary}\n\n"
             f"*Application file*\n"
-            f"{opening.application_file_uuid}"
+            f"{opening.application_file_uuid}\n\n"
+            f"*Job opening link*\n"
+            f"{opening.link_to_job_opening}"
         )
         return context, readable
 
